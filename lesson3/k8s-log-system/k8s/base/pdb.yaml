@@ -1,0 +1,21 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-processor-pdb
+  namespace: log-system
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: log-processor
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-producer-pdb
+  namespace: log-system
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: log-producer

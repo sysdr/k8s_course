@@ -1,0 +1,25 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: log-processor-authz
+  namespace: log-system
+spec:
+  selector:
+    matchLabels:
+      app: log-processor
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/log-system/sa/log-producer"]
+    to:
+    - operation:
+        methods: ["POST"]
+        paths: ["/logs"]
+  - from:
+    - source:
+        namespaces: ["log-system"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/health", "/ready", "/metrics"]

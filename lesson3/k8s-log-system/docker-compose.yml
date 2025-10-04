@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    environment:
+      POSTGRES_DB: logs
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  log-processor:
+    build: ./services/log-processor
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@timescaledb:5432/logs
+      REDIS_URL: redis://redis:6379
+      BATCH_SIZE: 100
+      FLUSH_INTERVAL: 5
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  log-producer-1:
+    build: ./services/log-producer
+    depends_on:
+      log-processor:
+        condition: service_healthy
+    environment:
+      PROCESSOR_URL: http://log-processor:8080
+      LOG_RATE: 10
+    ports:
+      - "8010:8000"
+
+  log-producer-2:
+    build: ./services/log-producer
+    depends_on:
+      log-processor:
+        condition: service_healthy
+    environment:
+      PROCESSOR_URL: http://log-processor:8080
+      LOG_RATE: 10
+    ports:
+      - "8011:8000"
+
+  frontend:
+    build: ./services/frontend
+    depends_on:
+      - log-processor
+    environment:
+      REACT_APP_API_URL: http://localhost:3000/api
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres_data:

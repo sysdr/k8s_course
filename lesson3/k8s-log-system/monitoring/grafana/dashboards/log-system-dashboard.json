@@ -1,0 +1,43 @@
+{
+  "dashboard": {
+    "title": "Log Aggregation System",
+    "panels": [
+      {
+        "title": "Logs Received Rate",
+        "targets": [
+          {
+            "expr": "rate(logs_received_total[5m])"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Processing Latency",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(log_processing_latency_seconds_bucket[5m]))"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Cache Hit Rate",
+        "targets": [
+          {
+            "expr": "rate(cache_hits_total[5m]) / (rate(cache_hits_total[5m]) + rate(cache_misses_total[5m])) * 100"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Active Processors",
+        "targets": [
+          {
+            "expr": "active_log_processors"
+          }
+        ],
+        "type": "stat"
+      }
+    ]
+  }
+}

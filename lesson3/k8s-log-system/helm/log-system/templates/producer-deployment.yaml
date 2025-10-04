@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "log-system.fullname" . }}-producer
+  labels:
+    {{- include "log-system.labels" . | nindent 4 }}
+    app.kubernetes.io/component: producer
+spec:
+  replicas: {{ .Values.replicaCount.producer }}
+  selector:
+    matchLabels:
+      {{- include "log-system.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: producer
+  template:
+    metadata:
+      labels:
+        {{- include "log-system.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: producer
+    spec:
+      containers:
+      - name: producer
+        image: "{{ .Values.image.producer.repository }}:{{ .Values.image.producer.tag }}"
+        imagePullPolicy: {{ .Values.image.producer.pullPolicy }}
+        ports:
+        - containerPort: 8000
+          name: http
+        resources:
+          {{- toYaml .Values.resources.producer | nindent 10 }}

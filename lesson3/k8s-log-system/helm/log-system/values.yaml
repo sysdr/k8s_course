@@ -1,0 +1,75 @@
+replicaCount:
+  producer: 2
+  processor: 3
+  frontend: 2
+
+image:
+  producer:
+    repository: log-producer
+    tag: latest
+    pullPolicy: IfNotPresent
+  processor:
+    repository: log-processor
+    tag: latest
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: log-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+resources:
+  producer:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  processor:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  frontend:
+    requests:
+      memory: "128Mi"
+      cpu: "50m"
+    limits:
+      memory: "256Mi"
+      cpu: "100m"
+
+autoscaling:
+  producer:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  frontend:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 75
+
+storage:
+  processor:
+    size: 10Gi
+    storageClass: fast-ssd
+  database:
+    size: 100Gi
+    storageClass: fast-ssd
+
+database:
+  password: postgres
+  
+service:
+  frontend:
+    type: LoadBalancer
+    port: 80
+
+istio:
+  enabled: false
+
+monitoring:
+  enabled: true

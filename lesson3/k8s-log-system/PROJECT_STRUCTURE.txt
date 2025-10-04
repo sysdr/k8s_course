@@ -1,0 +1,74 @@
+k8s-log-system/
+├── services/
+│   ├── log-producer/          # Python FastAPI log generator
+│   │   ├── app/
+│   │   │   └── main.py        # Producer service code
+│   │   ├── Dockerfile         # Multi-stage build
+│   │   └── requirements.txt
+│   ├── log-processor/         # Python FastAPI processor with state
+│   │   ├── app/
+│   │   │   └── main.py        # Processor with buffering and caching
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   └── frontend/              # React TypeScript dashboard
+│       ├── src/
+│       │   ├── App.tsx        # Main dashboard component
+│       │   ├── index.tsx
+│       │   └── components/
+│       ├── public/
+│       ├── Dockerfile
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── nginx.conf
+├── k8s/
+│   ├── base/                  # Base Kubernetes manifests
+│   │   ├── namespace.yaml
+│   │   ├── log-producer-deployment.yaml
+│   │   ├── log-processor-statefulset.yaml
+│   │   ├── timescaledb-statefulset.yaml
+│   │   ├── redis-deployment.yaml
+│   │   ├── frontend-deployment.yaml
+│   │   ├── secrets.yaml
+│   │   ├── rbac.yaml
+│   │   ├── hpa.yaml
+│   │   ├── pdb.yaml
+│   │   ├── network-policy.yaml
+│   │   └── storage-class.yaml
+│   └── overlays/              # Environment-specific overlays
+│       ├── dev/
+│       └── prod/
+├── helm/
+│   └── log-system/            # Helm chart
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       └── templates/
+│           ├── _helpers.tpl
+│           └── producer-deployment.yaml
+├── istio/                     # Service mesh configuration
+│   ├── gateway.yaml
+│   ├── virtual-service.yaml
+│   ├── destination-rule.yaml
+│   ├── peer-authentication.yaml
+│   └── authorization-policy.yaml
+├── monitoring/                # Observability stack
+│   ├── prometheus/
+│   │   ├── prometheus-config.yaml
+│   │   └── service-monitor.yaml
+│   ├── grafana/
+│   │   └── dashboards/
+│   │       └── log-system-dashboard.json
+│   └── jaeger/
+├── scripts/                   # Operational scripts
+│   ├── setup-cluster.sh       # Local cluster creation
+│   ├── build.sh               # Build and load images
+│   ├── deploy.sh              # Deploy to Kubernetes
+│   ├── monitoring-setup.sh    # Setup monitoring
+│   ├── load-test.sh           # Load testing
+│   └── cleanup.sh             # Environment cleanup
+├── tests/                     # Integration tests
+│   ├── test_networking.sh
+│   └── test_storage.sh
+├── docs/                      # Additional documentation
+├── docker-compose.yml         # Local development
+├── README.md                  # Comprehensive documentation
+└── PROJECT_STRUCTURE.txt      # This file

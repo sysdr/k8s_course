@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: log-system-monitor
+  namespace: log-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      monitored: "true"
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics
