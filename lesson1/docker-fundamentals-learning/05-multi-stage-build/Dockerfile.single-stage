@@ -1,0 +1,19 @@
+# Single-stage build (inefficient)
+# This produces a large image with unnecessary build dependencies
+
+FROM node:18
+
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy source code
+COPY src/ ./src/
+
+# Build application
+RUN npm run build
+
+# Run application
+CMD ["node", "dist/app.js"]

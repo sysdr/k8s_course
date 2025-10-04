@@ -1,0 +1,28 @@
+# Multi-stage build (optimized)
+# This produces a minimal production image
+
+# Stage 1: Build
+FROM node:18 AS builder
+
+WORKDIR /build
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY src/ ./src/
+RUN npm run build
+
+# Stage 2: Production
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy only production dependencies and built files
+COPY --from=builder /build/node_modules ./node_modules
+COPY --from=builder /build/dist ./dist
+COPY package.json ./
+
+# Run as non-root
+USER node
+
+CMD ["node", "dist/app.js"]

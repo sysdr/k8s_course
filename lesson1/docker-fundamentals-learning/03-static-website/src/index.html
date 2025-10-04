@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Fundamentals - Static Website</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐳 Docker Fundamentals</h1>
+            <p class="subtitle">Your First Containerized Website</p>
+        </header>
+
+        <main>
+            <section class="info-card">
+                <h2>What Just Happened?</h2>
+                <p>This webpage is running inside a Docker container based on nginx:alpine.</p>
+                <ul>
+                    <li>Built from a custom Dockerfile</li>
+                    <li>Served by nginx web server</li>
+                    <li>Isolated in its own container</li>
+                    <li>Accessible via port mapping</li>
+                </ul>
+            </section>
+
+            <section class="info-card">
+                <h2>Container Details</h2>
+                <div id="container-info">
+                    <p><strong>Image:</strong> static-website:latest</p>
+                    <p><strong>Base Image:</strong> nginx:alpine (~25MB)</p>
+                    <p><strong>Port Mapping:</strong> 3000:80</p>
+                    <p><strong>Build Time:</strong> <span id="build-time">Loading...</span></p>
+                </div>
+            </section>
+
+            <section class="info-card">
+                <h2>Key Concepts</h2>
+                <div class="concepts">
+                    <div class="concept">
+                        <h3>Layers</h3>
+                        <p>Each Dockerfile instruction creates a cached layer</p>
+                    </div>
+                    <div class="concept">
+                        <h3>Isolation</h3>
+                        <p>Container runs in isolated namespace</p>
+                    </div>
+                    <div class="concept">
+                        <h3>Portability</h3>
+                        <p>Same image runs anywhere Docker runs</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="info-card">
+                <h2>Try This</h2>
+                <ol>
+                    <li>Modify this HTML file</li>
+                    <li>Rebuild the image: <code>./build.sh</code></li>
+                    <li>Restart container: <code>./run.sh</code></li>
+                    <li>Refresh this page to see changes</li>
+                </ol>
+            </section>
+        </main>
+
+        <footer>
+            <p>Running in Docker Container | Learn More at <a href="https://docs.docker.com" target="_blank">docs.docker.com</a></p>
+        </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

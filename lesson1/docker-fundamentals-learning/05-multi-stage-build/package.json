@@ -1,0 +1,12 @@
+{
+  "name": "multi-stage-demo",
+  "version": "1.0.0",
+  "description": "Demonstrates multi-stage build optimization",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "mkdir -p dist && cp src/app.js dist/"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
