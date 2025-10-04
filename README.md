@@ -1,6 +1,6 @@
 # The Kubernetes Odyssey: A Multi-Track Journey from Zero to Production Hero Course - Lesson Generation Prompt
 
-
+substack link : https://handsonk8s.substack.com/
 
 ***
 
