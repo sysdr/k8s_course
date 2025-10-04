@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "title": "Log Analytics Platform",
+    "panels": [
+      {
+        "title": "Logs Ingested",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(logs_ingested_total[5m])",
+            "legendFormat": "Ingestion Rate"
+          }
+        ]
+      },
+      {
+        "title": "Processing Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(log_processing_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95 Duration"
+          }
+        ]
+      },
+      {
+        "title": "Pod CPU Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{namespace=\"log-analytics\"}[5m])",
+            "legendFormat": "{{pod}}"
+          }
+        ]
+      },
+      {
+        "title": "Pod Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes{namespace=\"log-analytics\"}",
+            "legendFormat": "{{pod}}"
+          }
+        ]
+      }
+    ]
+  }
+}

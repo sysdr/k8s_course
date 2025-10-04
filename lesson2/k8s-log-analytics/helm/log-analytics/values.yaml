@@ -1,0 +1,58 @@
+# Default values for log-analytics
+
+namespace: log-analytics
+
+redis:
+  image: redis:7-alpine
+  replicas: 1
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+apiService:
+  image: api-service:latest
+  replicas: 2
+  port: 8000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilization: 70
+    targetMemoryUtilization: 80
+
+frontend:
+  image: frontend:latest
+  replicas: 2
+  port: 3000
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  service:
+    type: LoadBalancer
+
+logProcessor:
+  image: log-processor:latest
+  replicas: 1
+  port: 9000
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"

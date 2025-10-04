@@ -1,0 +1,21 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-service-pdb
+  namespace: log-analytics
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend-pdb
+  namespace: log-analytics
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: frontend
