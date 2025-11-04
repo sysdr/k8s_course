@@ -1,0 +1,46 @@
+.App {
+  text-align: center;
+  background-color: #282c34;
+  min-height: 100vh;
+  color: white;
+}
+
+.App-header {
+  background-color: #1a1d24;
+  padding: 20px;
+  color: white;
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.panel {
+  background: #2d3138;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: left;
+}
+
+.panel h2 {
+  margin-top: 0;
+  color: #61dafb;
+}
+
+.metric {
+  margin: 10px 0;
+  padding: 10px;
+  background: #1a1d24;
+  border-radius: 4px;
+}
+
+.log-entry {
+  padding: 8px;
+  margin: 4px 0;
+  background: #1a1d24;
+  border-left: 3px solid #61dafb;
+  font-size: 12px;
+}
