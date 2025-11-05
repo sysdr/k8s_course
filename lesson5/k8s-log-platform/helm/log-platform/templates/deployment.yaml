@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-log-ingestion
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: log-ingestion
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount.logIngestion }}
+  selector:
+    matchLabels:
+      app: log-ingestion
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: log-ingestion
+        release: {{ .Release.Name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: log-ingestion
+        image: "{{ .Values.image.logIngestion.repository }}:{{ .Values.image.logIngestion.tag }}"
+        imagePullPolicy: {{ .Values.image.logIngestion.pullPolicy }}
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: {{ .Values.kafka.bootstrapServers }}
+        - name: KAFKA_TOPIC
+          value: {{ .Values.kafka.topic }}
+        resources:
+          {{- toYaml .Values.resources.logIngestion | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5

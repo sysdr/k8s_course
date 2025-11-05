@@ -1,0 +1,18 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: log-ingestion-authz
+  namespace: log-platform
+spec:
+  selector:
+    matchLabels:
+      app: log-ingestion
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: ["log-platform", "istio-system"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/api/v1/*", "/health", "/ready", "/metrics"]

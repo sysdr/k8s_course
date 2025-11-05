@@ -1,0 +1,97 @@
+# Default values for log-platform
+replicaCount:
+  logIngestion: 3
+  logProcessor: 5
+  frontend: 2
+
+image:
+  logIngestion:
+    repository: log-ingestion
+    tag: latest
+    pullPolicy: IfNotPresent
+  logProcessor:
+    repository: log-processor
+    tag: latest
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+resources:
+  logIngestion:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  logProcessor:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 4000m
+      memory: 4Gi
+  frontend:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+autoscaling:
+  logIngestion:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 50
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  logProcessor:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 75
+
+kafka:
+  bootstrapServers: "kafka.log-platform.svc.cluster.local:9092"
+  topic: "application-logs"
+
+postgresql:
+  host: "postgresql.log-platform.svc.cluster.local"
+  port: 5432
+  database: "logs"
+  username: "postgres"
+  password: "SecurePassword123!"
+
+redis:
+  host: "redis.log-platform.svc.cluster.local"
+  port: 6379
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: logs.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: log-platform-tls
+      hosts:
+        - logs.example.com
+
+monitoring:
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+  jaeger:
+    enabled: true
+
+istio:
+  enabled: true
+  mtls: STRICT

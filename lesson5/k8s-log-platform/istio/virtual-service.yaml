@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: log-ingestion-vs
+  namespace: log-platform
+spec:
+  hosts:
+  - log-ingestion.log-platform.svc.cluster.local
+  http:
+  - match:
+    - uri:
+        prefix: /api/v1/logs
+    route:
+    - destination:
+        host: log-ingestion.log-platform.svc.cluster.local
+        port:
+          number: 8000
+        subset: v1
+      weight: 90
+    - destination:
+        host: log-ingestion.log-platform.svc.cluster.local
+        port:
+          number: 8000
+        subset: v1-1
+      weight: 10
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+      retryOn: 5xx,reset,connect-failure,refused-stream
+    timeout: 10s
+    fault:
+      delay:
+        percentage:
+          value: 0.1
+        fixedDelay: 5s

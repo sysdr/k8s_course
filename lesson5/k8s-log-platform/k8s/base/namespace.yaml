@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: log-platform
+  labels:
+    app: log-platform
+    istio-injection: enabled

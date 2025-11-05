@@ -1,0 +1,21 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-ingestion-pdb
+  namespace: log-platform
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: log-ingestion
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-processor-pdb
+  namespace: log-platform
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: log-processor

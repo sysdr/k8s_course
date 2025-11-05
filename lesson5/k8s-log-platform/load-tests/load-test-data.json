@@ -1,0 +1,8 @@
+{
+  "level": "INFO",
+  "message": "Load test log entry",
+  "service": "load-test-service",
+  "metadata": {
+    "test": true
+  }
+}
