@@ -1,0 +1,52 @@
+{
+  "dashboard": {
+    "title": "Log Processing Dashboard",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Logs Ingested by Level",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (level) (logs_ingested_total)"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Logs Processed by Level",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum by (level) (logs_processed_total)"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "HTTP Requests by Status",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum by (status) (http_requests_total)"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Request Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, http_request_duration_seconds)",
+            "legendFormat": "P95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, http_request_duration_seconds)",
+            "legendFormat": "P99"
+          }
+        ]
+      }
+    ]
+  }
+}
