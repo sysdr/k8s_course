@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: log-analytics-metrics
+  namespace: log-analytics
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: log-ingestion
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics

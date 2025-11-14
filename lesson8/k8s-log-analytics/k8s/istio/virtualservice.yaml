@@ -1,0 +1,31 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: log-ingestion-vs
+  namespace: log-analytics
+spec:
+  hosts:
+  - "logs.example.com"
+  gateways:
+  - log-analytics-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/logs"
+    route:
+    - destination:
+        host: log-ingestion
+        port:
+          number: 8000
+      weight: 90
+    - destination:
+        host: log-ingestion
+        subset: canary
+        port:
+          number: 8000
+      weight: 10
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,reset,connect-failure,refused-stream

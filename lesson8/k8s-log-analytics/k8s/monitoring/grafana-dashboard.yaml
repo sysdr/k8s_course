@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-analytics-dashboard
+  namespace: log-analytics
+  labels:
+    grafana_dashboard: "1"
+data:
+  log-analytics.json: |
+    {
+      "dashboard": {
+        "title": "Log Analytics Platform",
+        "panels": [
+          {
+            "title": "Log Ingestion Rate",
+            "targets": [
+              {
+                "expr": "rate(logs_received_total[5m])",
+                "legendFormat": "Logs/sec"
+              }
+            ]
+          },
+          {
+            "title": "Error Rate",
+            "targets": [
+              {
+                "expr": "rate(logs_failed_total[5m])",
+                "legendFormat": "Errors/sec"
+              }
+            ]
+          },
+          {
+            "title": "Processing Latency",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(log_processing_seconds_bucket[5m]))",
+                "legendFormat": "p95"
+              }
+            ]
+          }
+        ]
+      }
+    }

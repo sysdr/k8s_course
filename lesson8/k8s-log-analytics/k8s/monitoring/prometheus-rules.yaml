@@ -1,0 +1,40 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: log-analytics-alerts
+  namespace: log-analytics
+spec:
+  groups:
+  - name: log-analytics
+    interval: 30s
+    rules:
+    - alert: HighErrorRate
+      expr: |
+        rate(logs_failed_total[5m]) > 0.05
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High error rate in log processing"
+        description: "Error rate is {{ $value }} errors/sec"
+    
+    - alert: LogIngestionDown
+      expr: |
+        up{job="log-ingestion"} == 0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Log ingestion service is down"
+        description: "Log ingestion has been down for more than 2 minutes"
+    
+    - alert: HighMemoryUsage
+      expr: |
+        container_memory_usage_bytes{pod=~"log-ingestion-.*"} / 
+        container_spec_memory_limit_bytes{pod=~"log-ingestion-.*"} > 0.9
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High memory usage detected"
+        description: "Memory usage is above 90%"

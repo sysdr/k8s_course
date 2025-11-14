@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "log-analytics.fullname" . }}-log-ingestion
+  labels:
+    {{- include "log-analytics.labels" . | nindent 4 }}
+    app.kubernetes.io/component: log-ingestion
+spec:
+  replicas: {{ .Values.replicaCount.logIngestion }}
+  selector:
+    matchLabels:
+      {{- include "log-analytics.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: log-ingestion
+  template:
+    metadata:
+      labels:
+        {{- include "log-analytics.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: log-ingestion
+    spec:
+      containers:
+      - name: log-ingestion
+        image: "{{ .Values.image.repository }}/log-ingestion:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8000
+          name: http
+        resources:
+          {{- toYaml .Values.resources.logIngestion | nindent 10 }}

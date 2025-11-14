@@ -1,0 +1,21 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-ingestion-pdb
+  namespace: log-analytics
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: log-ingestion
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: analytics-engine-pdb
+  namespace: log-analytics
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: analytics-engine

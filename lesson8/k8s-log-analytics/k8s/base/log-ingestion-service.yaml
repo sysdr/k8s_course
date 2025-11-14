@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-ingestion
+  namespace: log-analytics
+  labels:
+    app: log-ingestion
+spec:
+  type: ClusterIP
+  selector:
+    app: log-ingestion
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  sessionAffinity: None
