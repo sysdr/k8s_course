@@ -1,0 +1,7 @@
+FROM postgres:15-alpine
+
+COPY migrations/ /migrations/
+
+RUN chmod +x /migrations/run_migrations.sh
+
+ENTRYPOINT ["/migrations/run_migrations.sh"]
