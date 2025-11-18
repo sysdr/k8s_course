@@ -1,0 +1,37 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-gateway-authz
+  namespace: log-analytics
+spec:
+  selector:
+    matchLabels:
+      app: api-gateway
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: ["istio-system", "log-analytics"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/api/*", "/health", "/metrics"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: internal-services-authz
+  namespace: log-analytics
+spec:
+  selector:
+    matchLabels:
+      app: log-ingestion
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/log-analytics/sa/api-gateway"]
+    to:
+    - operation:
+        methods: ["POST"]
+        paths: ["/ingest"]

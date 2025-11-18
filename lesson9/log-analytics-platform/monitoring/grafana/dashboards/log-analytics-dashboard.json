@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "title": "Log Analytics Platform",
+    "panels": [
+      {
+        "title": "Request Rate by Service",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{namespace=\"log-analytics\"}[5m])",
+            "legendFormat": "{{service}}"
+          }
+        ]
+      },
+      {
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\",namespace=\"log-analytics\"}[5m])",
+            "legendFormat": "{{service}}"
+          }
+        ]
+      },
+      {
+        "title": "P99 Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{namespace=\"log-analytics\"}[5m]))",
+            "legendFormat": "{{service}}"
+          }
+        ]
+      },
+      {
+        "title": "Active Pods by Service",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "count(kube_pod_info{namespace=\"log-analytics\", pod_phase=\"Running\"}) by (label_app)",
+            "legendFormat": "{{label_app}}"
+          }
+        ]
+      }
+    ]
+  }
+}

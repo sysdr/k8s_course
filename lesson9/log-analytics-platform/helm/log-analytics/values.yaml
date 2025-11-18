@@ -1,0 +1,110 @@
+# Default values for log-analytics
+
+global:
+  namespace: log-analytics
+  imageRegistry: docker.io
+  imagePullPolicy: IfNotPresent
+
+apiGateway:
+  replicaCount: 3
+  image:
+    repository: api-gateway
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPU: 70
+    targetMemory: 80
+  service:
+    type: ClusterIP
+    port: 8080
+    nodePort: 30080
+
+logIngestion:
+  replicaCount: 5
+  image:
+    repository: log-ingestion
+    tag: latest
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 20
+    targetCPU: 75
+
+logProcessor:
+  replicaCount: 3
+  image:
+    repository: log-processor
+    tag: latest
+  resources:
+    requests:
+      cpu: 150m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+queryService:
+  replicaCount: 2
+  image:
+    repository: query-service
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: frontend
+    tag: latest
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  service:
+    type: NodePort
+    port: 80
+    nodePort: 30081
+
+istio:
+  enabled: true
+  mtls:
+    mode: STRICT
+  gateway:
+    enabled: true
+
+networkPolicy:
+  enabled: true
+
+podDisruptionBudget:
+  enabled: true
+
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
