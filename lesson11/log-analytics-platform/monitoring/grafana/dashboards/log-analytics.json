@@ -1,0 +1,36 @@
+{
+  "dashboard": {
+    "title": "Log Analytics Platform",
+    "panels": [
+      {
+        "title": "Logs Received Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(logs_received_total[5m])",
+            "legendFormat": "{{instance}}"
+          }
+        ]
+      },
+      {
+        "title": "Processing Latency P95",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(log_processing_seconds_bucket[5m]))"
+          }
+        ]
+      },
+      {
+        "title": "Database Writes",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(db_writes_total[5m])",
+            "legendFormat": "{{status}}"
+          }
+        ]
+      }
+    ]
+  }
+}

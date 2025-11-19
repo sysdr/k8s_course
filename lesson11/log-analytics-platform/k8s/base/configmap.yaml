@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-collector-config
+  namespace: log-analytics
+  labels:
+    app: log-collector
+data:
+  LOG_LEVEL: "info"
+  BATCH_SIZE: "1000"
+  KAFKA_BROKERS: "kafka.log-analytics:9092"
+  KAFKA_TOPIC: "raw-logs"
+  REDIS_HOST: "redis.log-analytics"
+  REDIS_PORT: "6379"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-processor-config
+  namespace: log-analytics
+  labels:
+    app: log-processor
+data:
+  LOG_LEVEL: "info"
+  KAFKA_BROKERS: "kafka.log-analytics:9092"
+  KAFKA_TOPIC: "raw-logs"
+  KAFKA_GROUP: "log-processor-group"
+  DB_HOST: "postgres.log-analytics"
+  DB_PORT: "5432"
+  DB_NAME: "logs"
+  REDIS_HOST: "redis.log-analytics"
+  config.yaml: |
+    processing:
+      workers: 8
+      batch_size: 500
+      timeout_ms: 5000
+    features:
+      async_writes: true
+      deduplication: true
+      enrichment: true
+    retry:
+      max_attempts: 3
+      backoff_ms: 1000
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-api-config
+  namespace: log-analytics
+  labels:
+    app: log-api
+data:
+  LOG_LEVEL: "info"
+  DB_HOST: "postgres.log-analytics"
+  DB_PORT: "5432"
+  DB_NAME: "logs"
+  REDIS_HOST: "redis.log-analytics"
+  CORS_ORIGINS: "*"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: log-analytics
+  labels:
+    app: frontend
+data:
+  REACT_APP_API_URL: "http://log-api.log-analytics:8080"

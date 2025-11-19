@@ -1,0 +1,10 @@
+processing:
+  workers: 2
+  batch_size: 50
+  timeout_ms: 10000
+features:
+  async_writes: false
+  deduplication: false
+logging:
+  level: debug
+  format: json

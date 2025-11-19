@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-collector-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "log-analytics.labels" . | nindent 4 }}
+data:
+  LOG_LEVEL: {{ .Values.logCollector.config.logLevel | quote }}
+  BATCH_SIZE: {{ .Values.logCollector.config.batchSize | quote }}
+  KAFKA_BROKERS: {{ .Values.logCollector.config.kafkaBrokers | quote }}
+  KAFKA_TOPIC: {{ .Values.logCollector.config.kafkaTopic | quote }}
+  REDIS_HOST: {{ .Values.redis.host | quote }}
+  REDIS_PORT: {{ .Values.redis.port | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-processor-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "log-analytics.labels" . | nindent 4 }}
+data:
+  LOG_LEVEL: {{ .Values.logProcessor.config.logLevel | quote }}
+  KAFKA_BROKERS: {{ .Values.kafka.brokers | quote }}
+  KAFKA_TOPIC: {{ .Values.kafka.topic | quote }}
+  KAFKA_GROUP: "log-processor-group"
+  DB_HOST: {{ .Values.database.host | quote }}
+  DB_PORT: {{ .Values.database.port | quote }}
+  DB_NAME: {{ .Values.database.name | quote }}
+  REDIS_HOST: {{ .Values.redis.host | quote }}
+  config.yaml: |
+    processing:
+      workers: {{ .Values.logProcessor.config.workers }}
+      batch_size: {{ .Values.logProcessor.config.batchSize }}
+      timeout_ms: 5000
+    features:
+      async_writes: {{ .Values.logProcessor.config.asyncWrites }}
