@@ -1,0 +1,41 @@
+# BROKEN MANIFEST - Scheduling Failure: Untolerated Taint
+# Issue: Nodes have taint that Pod doesn't tolerate
+# Debug: kubectl describe nodes | grep Taints
+# Fix: Add appropriate toleration to Pod spec
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-worker
+  namespace: log-processor
+  labels:
+    app: analytics-worker
+    debug-scenario: taint-mismatch
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: analytics-worker
+  template:
+    metadata:
+      labels:
+        app: analytics-worker
+    spec:
+      # BUG: Missing toleration for node taint
+      # Nodes are tainted with: dedicated=analytics:NoSchedule
+      # tolerations:
+      # - key: "dedicated"
+      #   operator: "Equal"
+      #   value: "analytics"
+      #   effect: "NoSchedule"
+      containers:
+      - name: worker
+        image: python:3.11-slim
+        command: ["sleep", "infinity"]
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"

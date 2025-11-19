@@ -1,0 +1,55 @@
+# BROKEN MANIFEST - Networking Failure: DNS Blocked by NetworkPolicy
+# Issue: Deny-all NetworkPolicy blocks DNS queries to kube-dns
+# Debug: kubectl exec -it <pod> -- nslookup kubernetes
+# Fix: Add egress rule allowing DNS (port 53) to kube-system
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-dashboard
+  namespace: log-processor
+  labels:
+    app: log-dashboard
+    debug-scenario: dns-blocked
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-dashboard
+  template:
+    metadata:
+      labels:
+        app: log-dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-dashboard
+  namespace: log-processor
+  labels:
+    debug-scenario: dns-blocked
+spec:
+  podSelector:
+    matchLabels:
+      app: log-dashboard
+  policyTypes:
+  - Ingress
+  - Egress
+  # BUG: No egress rules = blocks ALL egress including DNS
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    ports:
+    - port: 80

@@ -1,0 +1,40 @@
+# SOLUTION: Resource Exhaustion Fixed
+# Changes: Reduced CPU request from 5000m to 500m
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-ingester
+  namespace: log-processor
+  labels:
+    app: log-ingester
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: log-ingester
+  template:
+    metadata:
+      labels:
+        app: log-ingester
+    spec:
+      containers:
+      - name: ingester
+        image: python:3.11-slim
+        command: ["sleep", "infinity"]
+        resources:
+          requests:
+            # FIXED: Reasonable CPU request
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+        ports:
+        - containerPort: 8000
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10

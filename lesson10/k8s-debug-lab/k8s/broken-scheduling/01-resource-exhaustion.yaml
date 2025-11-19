@@ -1,0 +1,43 @@
+# BROKEN MANIFEST - Scheduling Failure: Resource Exhaustion
+# Issue: CPU request exceeds available node capacity
+# Debug: kubectl describe pod log-ingester-xxx -n log-processor
+# Fix: Reduce cpu request to a reasonable value (e.g., 500m)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-ingester
+  namespace: log-processor
+  labels:
+    app: log-ingester
+    debug-scenario: resource-exhaustion
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: log-ingester
+  template:
+    metadata:
+      labels:
+        app: log-ingester
+    spec:
+      containers:
+      - name: ingester
+        image: python:3.11-slim
+        command: ["sleep", "infinity"]
+        resources:
+          requests:
+            # BUG: Requesting 5 CPU cores - most nodes have fewer than this
+            cpu: "5000m"
+            memory: "8Gi"
+          limits:
+            cpu: "8000m"
+            memory: "16Gi"
+        ports:
+        - containerPort: 8000
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10

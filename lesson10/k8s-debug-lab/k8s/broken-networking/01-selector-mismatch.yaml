@@ -1,0 +1,52 @@
+# BROKEN MANIFEST - Networking Failure: Service Selector Mismatch
+# Issue: Service selector doesn't match any Pod labels
+# Debug: kubectl get endpoints log-api -n log-processor
+# Fix: Align Service selector with Pod labels
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-api
+  namespace: log-processor
+  labels:
+    app: log-api
+    debug-scenario: selector-mismatch
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: log-api
+  template:
+    metadata:
+      labels:
+        app: log-api
+        version: v1
+    spec:
+      containers:
+      - name: api
+        image: python:3.11-slim
+        command: ["python", "-m", "http.server", "8002"]
+        ports:
+        - containerPort: 8002
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-api
+  namespace: log-processor
+  labels:
+    debug-scenario: selector-mismatch
+spec:
+  selector:
+    app: log-api
+    # BUG: No Pods have version=v2, they have version=v1
+    version: v2
+  ports:
+  - port: 80
+    targetPort: 8002
+    protocol: TCP
+  type: ClusterIP

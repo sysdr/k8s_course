@@ -1,0 +1,51 @@
+# BROKEN MANIFEST - Networking Failure: Port Mismatch
+# Issue: Service targetPort doesn't match container port
+# Debug: kubectl describe svc log-processor -n log-processor
+# Fix: Set targetPort to match container port (8001)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-processor
+  namespace: log-processor
+  labels:
+    app: log-processor
+    debug-scenario: port-mismatch
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: log-processor
+  template:
+    metadata:
+      labels:
+        app: log-processor
+    spec:
+      containers:
+      - name: processor
+        image: python:3.11-slim
+        command: ["python", "-m", "http.server", "8001"]
+        ports:
+        # Container listens on 8001
+        - containerPort: 8001
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-processor
+  namespace: log-processor
+  labels:
+    debug-scenario: port-mismatch
+spec:
+  selector:
+    app: log-processor
+  ports:
+  - port: 80
+    # BUG: targetPort 8080 doesn't match container port 8001
+    targetPort: 8080
+    protocol: TCP
+  type: ClusterIP

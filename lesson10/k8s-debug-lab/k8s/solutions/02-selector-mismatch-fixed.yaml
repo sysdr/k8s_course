@@ -1,0 +1,47 @@
+# SOLUTION: Service Selector Mismatch Fixed
+# Changes: Updated Service selector to match Pod labels (version: v1)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-api
+  namespace: log-processor
+  labels:
+    app: log-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: log-api
+  template:
+    metadata:
+      labels:
+        app: log-api
+        version: v1
+    spec:
+      containers:
+      - name: api
+        image: python:3.11-slim
+        command: ["python", "-m", "http.server", "8002"]
+        ports:
+        - containerPort: 8002
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-api
+  namespace: log-processor
+spec:
+  selector:
+    app: log-api
+    # FIXED: Matches Pod labels
+    version: v1
+  ports:
+  - port: 80
+    targetPort: 8002
+    protocol: TCP
+  type: ClusterIP
