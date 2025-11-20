@@ -1,0 +1,74 @@
+{{- if .Values.analyticsApi.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-api
+  labels:
+    app: analytics-api
+    {{- include "health-probes-system.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.analyticsApi.replicas }}
+  selector:
+    matchLabels:
+      app: analytics-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: analytics-api
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.analyticsApi.terminationGracePeriodSeconds }}
+      containers:
+      - name: analytics-api
+        image: "{{ .Values.analyticsApi.image.repository }}:{{ .Values.analyticsApi.image.tag }}"
+        imagePullPolicy: {{ .Values.analyticsApi.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        resources:
+          {{- toYaml .Values.analyticsApi.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: {{ .Values.analyticsApi.probes.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.analyticsApi.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.analyticsApi.probes.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.analyticsApi.probes.liveness.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: {{ .Values.analyticsApi.probes.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.analyticsApi.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.analyticsApi.probes.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.analyticsApi.probes.readiness.failureThreshold }}
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: 8080
+          initialDelaySeconds: {{ .Values.analyticsApi.probes.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.analyticsApi.probes.startup.periodSeconds }}
+          failureThreshold: {{ .Values.analyticsApi.probes.startup.failureThreshold }}
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - "curl -X POST http://localhost:8080/shutdown && sleep {{ .Values.analyticsApi.preStopSleep }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-api
+spec:
+  selector:
+    app: analytics-api
+  ports:
+  - port: 8080
+    targetPort: 8080
+{{- end }}

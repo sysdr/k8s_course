@@ -1,0 +1,6 @@
+apiVersion: v2
+name: health-probes-system
+description: Log Analytics System with Health Probes and Lifecycle Management
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

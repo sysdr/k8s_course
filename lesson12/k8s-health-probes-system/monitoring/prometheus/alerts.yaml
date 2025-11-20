@@ -1,0 +1,47 @@
+groups:
+- name: health-probe-alerts
+  rules:
+  - alert: PodNotReady
+    expr: kube_pod_status_ready{condition="true", namespace="log-analytics"} == 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Pod {{ $labels.pod }} is not ready"
+      description: "Pod has been not ready for more than 5 minutes"
+
+  - alert: HighRestartCount
+    expr: increase(kube_pod_container_status_restarts_total{namespace="log-analytics"}[1h]) > 3
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container {{ $labels.container }} in pod {{ $labels.pod }} is restarting frequently"
+      description: "Container has restarted more than 3 times in the last hour"
+
+  - alert: ProbeFailureRate
+    expr: rate(probe_http_requests_total{status!="200"}[5m]) > 0.1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High health probe failure rate"
+      description: "Health probe failure rate is above 10%"
+
+  - alert: SlowStartup
+    expr: kube_pod_container_status_waiting_reason{reason="ContainerCreating", namespace="log-analytics"} == 1
+    for: 3m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Pod {{ $labels.pod }} is slow to start"
+      description: "Pod has been in ContainerCreating state for more than 3 minutes"
+
+  - alert: HighConnectionPoolUsage
+    expr: api_active_connections / db_connection_pool_size > 0.8
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High connection pool usage"
+      description: "Connection pool usage is above 80%"

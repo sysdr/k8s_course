@@ -1,0 +1,48 @@
+{
+  "dashboard": {
+    "title": "Health Probes Dashboard",
+    "uid": "health-probes",
+    "panels": [
+      {
+        "title": "Pod Restart Count",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"log-analytics\"}) by (pod)",
+            "legendFormat": "{{ pod }}"
+          }
+        ]
+      },
+      {
+        "title": "Ready Pods by Service",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "sum(kube_pod_status_ready{condition=\"true\", namespace=\"log-analytics\"}) by (app)",
+            "legendFormat": "{{ app }}"
+          }
+        ]
+      },
+      {
+        "title": "Probe Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, rate(log_processing_seconds_bucket[5m]))",
+            "legendFormat": "p99"
+          }
+        ]
+      },
+      {
+        "title": "Active Connections",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "api_active_connections",
+            "legendFormat": "Active"
+          }
+        ]
+      }
+    ]
+  }
+}

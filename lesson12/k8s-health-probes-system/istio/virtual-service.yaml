@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: analytics-api
+  namespace: log-analytics
+spec:
+  hosts:
+  - analytics-api
+  http:
+  - route:
+    - destination:
+        host: analytics-api
+        port:
+          number: 8080
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: gateway-error,connect-failure,refused-stream
