@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-parser
+  namespace: log-platform
+  labels:
+    app: log-parser
+    tier: processing
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: log-parser
+  template:
+    metadata:
+      labels:
+        app: log-parser
+        tier: processing
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: log-parser
+        image: log-parser:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8001
+          name: http
+        env:
+        - name: REDIS_HOST
+          value: "redis"
+        - name: REDIS_PORT
+          value: "6379"
+        resources:
+          requests:
+            cpu: "500m"       # 0.5 CPU minimum
+            memory: "512Mi"   # 512MB minimum
+          limits:
+            cpu: "2000m"      # Can burst to 2 CPUs (4x requests)
+            memory: "768Mi"   # 1.5x requests for burstable QoS
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-parser
+  namespace: log-platform
+spec:
+  selector:
+    app: log-parser
+  ports:
+  - port: 8001
+    targetPort: 8001
+    name: http
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: log-parser-hpa
+  namespace: log-platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: log-parser
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Scale when CPU > 70%
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # Scale when memory > 80%
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5 min cooldown before scale down
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately
+      policies:
+      - type: Percent
+        value: 100  # Double pods if needed
+        periodSeconds: 30
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-parser-pdb
+  namespace: log-platform
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: log-parser

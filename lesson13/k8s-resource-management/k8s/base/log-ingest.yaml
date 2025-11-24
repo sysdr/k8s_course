@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-ingest
+  namespace: log-platform
+  labels:
+    app: log-ingest
+    tier: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: log-ingest
+  template:
+    metadata:
+      labels:
+        app: log-ingest
+        tier: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: log-ingest
+        image: log-ingest:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: REDIS_HOST
+          value: "redis"
+        - name: REDIS_PORT
+          value: "6379"
+        resources:
+          requests:
+            cpu: "1000m"      # 1 full CPU core
+            memory: "1Gi"     # 1GB memory
+          limits:
+            cpu: "1000m"      # Same as requests = Guaranteed QoS
+            memory: "1Gi"     # Same as requests = Guaranteed QoS
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-ingest
+  namespace: log-platform
+  labels:
+    app: log-ingest
+spec:
+  selector:
+    app: log-ingest
+  ports:
+  - port: 8000
+    targetPort: 8000
+    nodePort: 30000
+    name: http
+  type: NodePort
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-ingest-pdb
+  namespace: log-platform
+spec:
+  minAvailable: 2  # 75% availability (2 out of 3)
+  selector:
+    matchLabels:
+      app: log-ingest
