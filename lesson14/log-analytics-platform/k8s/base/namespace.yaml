@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: log-analytics
+  labels:
+    name: log-analytics
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: log-analytics-quota
+  namespace: log-analytics
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: 40Gi
+    limits.cpu: "40"
+    limits.memory: 80Gi
+    persistentvolumeclaims: "20"
+    requests.storage: 200Gi
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: log-analytics-limits
+  namespace: log-analytics
+spec:
+  limits:
+  - max:
+      cpu: "4"
+      memory: 8Gi
+    min:
+      cpu: 100m
+      memory: 128Mi
+    default:
+      cpu: 500m
+      memory: 512Mi
+    defaultRequest:
+      cpu: 200m
+      memory: 256Mi
+    type: Container
