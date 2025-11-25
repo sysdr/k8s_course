@@ -1,0 +1,360 @@
+const express = require('express');
+const axios = require('axios');
+const app = express();
+
+const API_URL = process.env.API_URL || 'http://api-backend:8000';
+console.log(`Frontend starting... API_URL: ${API_URL}`);
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', service: 'frontend', api_url: API_URL });
+});
+
+app.get('/', async (req, res) => {
+  try {
+    console.log(`Attempting to fetch from: ${API_URL}/api/products`);
+    const [productsResponse, statsResponse] = await Promise.all([
+      axios.get(`${API_URL}/api/products`, { timeout: 5000 }).catch(() => ({ data: [] })),
+      axios.get(`${API_URL}/api/stats`, { timeout: 5000 }).catch(() => ({ data: null }))
+    ]);
+    
+    const products = productsResponse.data || [];
+    const stats = statsResponse.data || null;
+    
+    const html = generateDashboardHTML(products, stats);
+    res.send(html);
+  } catch (error) {
+    console.error(`Failed to fetch data: ${error.message}`);
+    const html = generateErrorHTML(error.message);
+    res.status(500).send(html);
+  }
+});
+
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+function generateDashboardHTML(products, stats) {
+  let statsHtml = '';
+  if (stats) {
+    const categoriesHtml = stats.categories ? stats.categories.map(cat => 
+      '<div class="category-card"><span class="category-name">' + escapeHtml(cat.name) + 
+      '</span><span class="category-count">' + cat.count + ' items</span></div>'
+    ).join('') : '';
+    
+    statsHtml = '<div class="stats-grid">' +
+      '<div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value">' + 
+      (stats.total_products || 0) + '</div><div class="stat-label">Total Products</div></div>' +
+      '<div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value">$' + 
+      ((stats.total_inventory_value || 0) / 1000).toFixed(1) + 
+      'K</div><div class="stat-label">Inventory Value</div></div>' +
+      '<div class="stat-card"><div class="stat-icon">🏷️</div><div class="stat-value">' + 
+      (stats.categories ? stats.categories.length : 0) + 
+      '</div><div class="stat-label">Categories</div></div></div>';
+    
+    if (stats.categories && stats.categories.length > 0) {
+      statsHtml += '<div class="categories-section"><h2>Categories</h2><div class="categories-grid">' + 
+        categoriesHtml + '</div></div>';
+    }
+  }
+  
+  const productsHtml = products.map(product => 
+    '<div class="product-card">' +
+      '<div class="product-header">' +
+        '<div class="product-name">' + escapeHtml(product.name) + '</div>' +
+        '<div class="product-price">$' + product.price.toFixed(2) + '</div>' +
+      '</div>' +
+      '<div class="product-description">' + escapeHtml(product.description) + '</div>' +
+      '<div class="product-footer">' +
+        '<span class="product-category">' + escapeHtml(product.category) + '</span>' +
+        '<span class="product-stock">' + product.stock + ' in stock</span>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+  
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Commerce Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    header {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 24px 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #10b981 0%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    
+    .stat-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    
+    .stat-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+    
+    .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: #10b981;
+      margin-bottom: 8px;
+    }
+    
+    .stat-label {
+      color: #94a3b8;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .categories-section {
+      margin-bottom: 32px;
+    }
+    
+    .categories-section h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+    }
+    
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    
+    .category-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .category-name {
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+    
+    .category-count {
+      color: #10b981;
+      font-size: 14px;
+    }
+    
+    .products-section h2 {
+      font-size: 24px;
+      margin-bottom: 24px;
+      color: #e2e8f0;
+    }
+    
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    
+    .product-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+    
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      border-color: rgba(16, 185, 129, 0.5);
+    }
+    
+    .product-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 12px;
+    }
+    
+    .product-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #e2e8f0;
+      flex: 1;
+    }
+    
+    .product-price {
+      font-size: 24px;
+      font-weight: 700;
+      color: #10b981;
+    }
+    
+    .product-description {
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    
+    .product-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .product-category {
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .product-stock {
+      color: #f59e0b;
+      font-size: 14px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🛒 E-Commerce Dashboard</h1>
+      <p class="subtitle">Real-time product inventory and analytics</p>
+    </header>
+    
+    ${statsHtml}
+    
+    <div class="products-section">
+      <h2>Products</h2>
+      <div class="products-grid">
+        ${productsHtml}
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+function generateErrorHTML(errorMessage) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error - E-Commerce Dashboard</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .error-container {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      max-width: 600px;
+    }
+    .error-title {
+      font-size: 24px;
+      color: #ef4444;
+      margin-bottom: 16px;
+    }
+    .error-message {
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-container">
+    <div class="error-title">⚠️ Connection Error</div>
+    <div class="error-message">${escapeHtml(errorMessage)}</div>
+  </div>
+</body>
+</html>`;
+}
+
+const PORT = 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Frontend server running on port ${PORT}`);
+  console.log(`Configured to connect to backend at: ${API_URL}`);
+});
+

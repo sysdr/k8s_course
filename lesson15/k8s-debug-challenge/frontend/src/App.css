@@ -1,0 +1,65 @@
+.App {
+  min-height: 100vh;
+}
+
+.App-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+  color: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.App-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+}
+
+.App-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.loading {
+  text-align: center;
+  font-size: 1.5rem;
+  padding: 3rem;
+  color: #667eea;
+}
+
+.error-banner {
+  background: #fee;
+  border: 2px solid #f44;
+  border-radius: 8px;
+  padding: 2rem;
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.error-banner h2 {
+  color: #c00;
+  margin-bottom: 1rem;
+}
+
+.error-banner p {
+  color: #666;
+  margin-bottom: 1rem;
+  font-family: monospace;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.error-banner button {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.error-banner button:hover {
+  background: #5568d3;
+}

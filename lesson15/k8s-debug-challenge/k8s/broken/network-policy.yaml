@@ -1,0 +1,12 @@
+# BUG 3: Overly restrictive network policy
+# Uncomment this to add an additional debugging challenge
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: deny-all
+#   namespace: debug-challenge
+# spec:
+#   podSelector: {}
+#   policyTypes:
+#   - Ingress
+#   - Egress

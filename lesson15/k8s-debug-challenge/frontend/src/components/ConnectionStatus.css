@@ -1,0 +1,25 @@
+.connection-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid;
+  border-radius: 20px;
+  margin-top: 1rem;
+}
+
+.status-icon {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.status-text {
+  font-weight: 500;
+}
+
+.api-url {
+  font-family: monospace;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
