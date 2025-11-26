@@ -1,0 +1,92 @@
+# Default values for log-analytics
+
+global:
+  domain: localhost
+  imageRegistry: ""
+  imagePullSecrets: []
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+  tls:
+    enabled: false
+    secretName: log-analytics-tls
+
+logIngestion:
+  replicaCount: 3
+  image:
+    repository: log-ingestion
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPU: 70
+    targetMemory: 80
+
+queryService:
+  replicaCount: 3
+  image:
+    repository: query-service
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 15
+    targetCPU: 70
+
+analyticsService:
+  replicaCount: 2
+  image:
+    repository: analytics-service
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: frontend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+monitoring:
+  prometheus:
+    enabled: true
+    retention: "15d"
+  grafana:
+    enabled: true
+    # adminPassword should be set via secret or environment variable in production
+    # adminPassword: "CHANGE_ME_IN_PRODUCTION"

@@ -1,0 +1,74 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: log-analytics-ingress
+  annotations:
+    # SSL/TLS
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"  # Set to "true" in production
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+    
+    # CORS for API endpoints
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "15"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    
+    # Buffer size
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    
+    # Custom headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: localhost  # Change to your domain in production
+    http:
+      paths:
+      # Frontend - Must be last to act as catch-all
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+      
+      # API Endpoints - More specific paths first
+      - path: /api/ingest
+        pathType: Prefix
+        backend:
+          service:
+            name: log-ingestion-service
+            port:
+              number: 8000
+      
+      - path: /api/query
+        pathType: Prefix
+        backend:
+          service:
+            name: query-service
+            port:
+              number: 8001
+      
+      - path: /api/analytics
+        pathType: Prefix
+        backend:
+          service:
+            name: analytics-service
+            port:
+              number: 8002
+  # tls:
+  # - hosts:
+  #   - your-domain.com
+  #   secretName: log-analytics-tls
