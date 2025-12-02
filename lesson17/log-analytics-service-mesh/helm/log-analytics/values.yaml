@@ -1,0 +1,86 @@
+global:
+  namespace: log-analytics
+  istio:
+    enabled: true
+
+ingestionApi:
+  replicaCount: 3
+  image:
+    repository: ingestion-api
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilization: 70
+
+processingService:
+  replicaCount: 2
+  image:
+    repository: processing-service
+    tag: latest
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "300m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+queryApi:
+  replicaCount: 2
+  image:
+    repository: query-api
+    tag: latest
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+
+dashboard:
+  replicaCount: 2
+  image:
+    repository: dashboard
+    tag: latest
+
+kafka:
+  enabled: true
+  persistence:
+    size: 10Gi
+
+redis:
+  enabled: true
+  persistence:
+    size: 5Gi
+
+timescaledb:
+  enabled: true
+  persistence:
+    size: 20Gi
+  credentials:
+    username: postgres
+    password: CHANGE_ME_IN_PRODUCTION
+
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+  jaeger:
+    enabled: true

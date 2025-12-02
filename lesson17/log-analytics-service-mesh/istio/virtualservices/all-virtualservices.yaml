@@ -1,0 +1,67 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ingestion-api-vs
+  namespace: log-analytics
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - log-analytics-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/v1/ingest
+    route:
+    - destination:
+        host: ingestion-api
+        port:
+          number: 8000
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,reset,connect-failure,refused-stream
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: query-api-vs
+  namespace: log-analytics
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - log-analytics-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/v1/logs
+    - uri:
+        prefix: /api/v1/statistics
+    route:
+    - destination:
+        host: query-api
+        port:
+          number: 8002
+    timeout: 30s
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: dashboard-vs
+  namespace: log-analytics
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - log-analytics-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: dashboard
+        port:
+          number: 80

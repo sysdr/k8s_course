@@ -1,0 +1,46 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ingestion-api-monitor
+  namespace: log-analytics
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: ingestion-api
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: query-api-monitor
+  namespace: log-analytics
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: query-api
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: processing-service-monitor
+  namespace: log-analytics
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: processing-service
+  endpoints:
+  - port: metrics
+    interval: 15s

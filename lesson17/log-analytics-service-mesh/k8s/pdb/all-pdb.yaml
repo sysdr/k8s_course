@@ -1,0 +1,32 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ingestion-api-pdb
+  namespace: log-analytics
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: ingestion-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: query-api-pdb
+  namespace: log-analytics
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: query-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: processing-service-pdb
+  namespace: log-analytics
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: processing-service
