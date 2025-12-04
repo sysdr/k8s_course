@@ -1,0 +1,69 @@
+# Allow API Gateway to Log Ingestion Service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-ingestion
+  namespace: backend
+spec:
+  podSelector:
+    matchLabels:
+      app: log-ingestion
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: api-gateway
+    ports:
+    - protocol: TCP
+      port: 8001
+---
+# Allow API Gateway to Analytics Service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-analytics
+  namespace: backend
+spec:
+  podSelector:
+    matchLabels:
+      app: analytics-service
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: api-gateway
+    ports:
+    - protocol: TCP
+      port: 8003
+---
+# Allow API Gateway Egress to Backend Services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-egress
+  namespace: backend
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: log-ingestion
+    ports:
+    - protocol: TCP
+      port: 8001
+  - to:
+    - podSelector:
+        matchLabels:
+          app: analytics-service
+    ports:
+    - protocol: TCP
+      port: 8003

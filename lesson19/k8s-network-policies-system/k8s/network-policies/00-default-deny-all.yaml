@@ -1,0 +1,36 @@
+# Default Deny All Policy - Frontend Namespace
+# This creates a "closed" network - no traffic allowed by default
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: frontend
+spec:
+  podSelector: {}  # Applies to all pods in namespace
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Default Deny All Policy - Backend Namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: backend
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Default Deny All Policy - Data Layer Namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: data-layer
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress

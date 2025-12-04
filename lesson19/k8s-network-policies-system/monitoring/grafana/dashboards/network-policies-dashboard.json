@@ -1,0 +1,32 @@
+{
+  "dashboard": {
+    "title": "Network Policies - Log Analytics Platform",
+    "tags": ["kubernetes", "network-policies", "security"],
+    "panels": [
+      {
+        "title": "Request Rate by Service",
+        "targets": [
+          {
+            "expr": "rate(api_gateway_requests_total[5m])"
+          }
+        ]
+      },
+      {
+        "title": "Cross-Namespace Traffic",
+        "targets": [
+          {
+            "expr": "sum(rate(istio_requests_total[5m])) by (source_workload_namespace, destination_workload_namespace)"
+          }
+        ]
+      },
+      {
+        "title": "Network Policy Denials",
+        "targets": [
+          {
+            "expr": "rate(network_policy_drops_total[5m])"
+          }
+        ]
+      }
+    ]
+  }
+}
