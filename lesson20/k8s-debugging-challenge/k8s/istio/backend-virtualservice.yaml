@@ -1,0 +1,22 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: backend-vs
+spec:
+  hosts:
+  - backend-service
+  http:
+  - match:
+    - headers:
+        x-version:
+          exact: v2
+    route:
+    - destination:
+        host: backend-service
+        subset: v2  # BUG #4: This subset doesn't exist in DestinationRule
+      weight: 100
+  - route:
+    - destination:
+        host: backend-service
+        subset: v1
+      weight: 100
