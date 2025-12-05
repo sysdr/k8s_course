@@ -1,0 +1,60 @@
+---
+# RoleBinding: Log Processor can read pods and logs
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: log-processor-binding
+  namespace: analytics
+subjects:
+- kind: ServiceAccount
+  name: log-processor-sa
+  namespace: analytics
+roleRef:
+  kind: Role
+  name: pod-log-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding: Analytics API can read analytics resources
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: analytics-api-binding
+  namespace: analytics
+subjects:
+- kind: ServiceAccount
+  name: analytics-api-sa
+  namespace: analytics
+roleRef:
+  kind: Role
+  name: analytics-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding: Audit Service can read events
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: audit-service-binding
+  namespace: analytics
+subjects:
+- kind: ServiceAccount
+  name: audit-service-sa
+  namespace: analytics
+roleRef:
+  kind: Role
+  name: event-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding: Developer team read-only
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: developer-readonly-binding
+  namespace: developers
+subjects:
+- kind: ServiceAccount
+  name: developer-team-sa
+  namespace: developers
+roleRef:
+  kind: Role
+  name: developer-readonly
+  apiGroup: rbac.authorization.k8s.io

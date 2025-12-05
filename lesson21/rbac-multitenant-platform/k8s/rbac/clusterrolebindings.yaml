@@ -1,0 +1,56 @@
+---
+# ClusterRoleBinding: RBAC Validator can create access reviews
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rbac-validator-binding
+subjects:
+- kind: ServiceAccount
+  name: rbac-validator-sa
+  namespace: analytics
+roleRef:
+  kind: ClusterRole
+  name: rbac-validator
+  apiGroup: rbac.authorization.k8s.io
+---
+# ClusterRoleBinding: Analytics API cluster-wide read
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: analytics-cluster-reader-binding
+subjects:
+- kind: ServiceAccount
+  name: analytics-api-sa
+  namespace: analytics
+roleRef:
+  kind: ClusterRole
+  name: analytics-cluster-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# ClusterRoleBinding: DevOps team broad access
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: devops-team-binding
+subjects:
+- kind: ServiceAccount
+  name: devops-team-sa
+  namespace: devops
+roleRef:
+  kind: ClusterRole
+  name: devops-team-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ClusterRoleBinding: Auditor read-only cluster-wide
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: auditor-binding
+subjects:
+- kind: ServiceAccount
+  name: auditor-sa
+  namespace: auditors
+roleRef:
+  kind: ClusterRole
+  name: auditor-role
+  apiGroup: rbac.authorization.k8s.io

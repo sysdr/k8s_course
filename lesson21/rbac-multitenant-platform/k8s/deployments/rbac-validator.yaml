@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rbac-validator
+  namespace: analytics
+  labels:
+    app: rbac-validator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rbac-validator
+  template:
+    metadata:
+      labels:
+        app: rbac-validator
+    spec:
+      serviceAccountName: rbac-validator-sa
+      containers:
+      - name: rbac-validator
+        image: rbac-validator:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8003
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8003
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8003
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
