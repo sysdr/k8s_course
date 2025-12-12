@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: log-processor-netpol
+  namespace: logs-payment
+spec:
+  podSelector:
+    matchLabels:
+      app: log-processor
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from logs-public namespace (log ingestion service)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: logs-public
+      podSelector:
+        matchLabels:
+          app: log-ingestion
+    ports:
+    - protocol: TCP
+      port: 8001
+  # Allow ingress from monitoring namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8001
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow egress to external services if needed
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443

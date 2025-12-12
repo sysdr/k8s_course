@@ -1,0 +1,174 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-ingestion
+  namespace: logs-public
+  labels:
+    app: log-ingestion
+    tier: backend
+    security-policy: baseline
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: log-ingestion
+  template:
+    metadata:
+      labels:
+        app: log-ingestion
+        tier: backend
+        security-policy: baseline
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Security Context for Baseline Pod Security Standard
+      securityContext:
+        # Run as non-root user (baseline requirement)
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        # Enable seccomp filtering (baseline best practice)
+        seccompProfile:
+          type: RuntimeDefault
+      
+      containers:
+      - name: log-ingestion
+        image: log-ingestion:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        
+        # Container-level security context
+        securityContext:
+          # Baseline policy allows this, but we still follow best practices
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          # Read-only root filesystem (not required for baseline, but recommended)
+          readOnlyRootFilesystem: false  # Can be true with proper volume mounts
+        
+        env:
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        # Resource management
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        # Volume mounts for writable directories if using read-only root filesystem
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /app/.cache
+      
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+      
+      # Anti-affinity for high availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - log-ingestion
+              topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-ingestion-service
+  namespace: logs-public
+  labels:
+    app: log-ingestion
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: log-ingestion
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: log-ingestion-hpa
+  namespace: logs-public
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: log-ingestion
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-ingestion-pdb
+  namespace: logs-public
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: log-ingestion

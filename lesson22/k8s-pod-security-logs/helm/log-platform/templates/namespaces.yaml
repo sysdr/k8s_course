@@ -1,0 +1,35 @@
+{{- if .Values.podSecurity }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logs-public
+  labels:
+    name: logs-public
+    pod-security.kubernetes.io/enforce: {{ .Values.podSecurity.publicNamespace.enforce }}
+    pod-security.kubernetes.io/audit: {{ .Values.podSecurity.publicNamespace.audit }}
+    pod-security.kubernetes.io/warn: {{ .Values.podSecurity.publicNamespace.warn }}
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logs-payment
+  labels:
+    name: logs-payment
+    compliance: pci-dss
+    pod-security.kubernetes.io/enforce: {{ .Values.podSecurity.paymentNamespace.enforce }}
+    pod-security.kubernetes.io/audit: {{ .Values.podSecurity.paymentNamespace.audit }}
+    pod-security.kubernetes.io/warn: {{ .Values.podSecurity.paymentNamespace.warn }}
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logs-system
+  labels:
+    name: logs-system
+    pod-security.kubernetes.io/enforce: {{ .Values.podSecurity.systemNamespace.enforce }}
+    pod-security.kubernetes.io/audit: {{ .Values.podSecurity.systemNamespace.audit }}
+    pod-security.kubernetes.io/warn: {{ .Values.podSecurity.systemNamespace.warn }}
+{{- end }}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logs-system
+  labels:
+    name: logs-system
+    tier: infrastructure
+    # Pod Security Standards for system logs (privileged - use with caution)
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: v1.28
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+  annotations:
+    description: "System-level log collection requiring host access (DaemonSets)"
+    warning: "Privileged policy - only deploy trusted system workloads"

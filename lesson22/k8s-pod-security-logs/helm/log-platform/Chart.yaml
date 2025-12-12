@@ -1,0 +1,14 @@
+apiVersion: v2
+name: log-platform
+description: Multi-tenant log analytics platform with Pod Security Standards
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - logs
+  - security
+  - pod-security-standards
+  - multi-tenant
+maintainers:
+  - name: Platform Team
+    email: platform@example.com
