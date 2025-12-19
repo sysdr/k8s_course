@@ -1,0 +1,13 @@
+apiVersion: v2
+name: secrets-platform
+description: Production secrets management platform for Kubernetes
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - secrets
+  - security
+  - kubernetes
+maintainers:
+  - name: Platform Team
+    email: platform@example.com
