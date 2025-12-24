@@ -1,0 +1,46 @@
+# PodSecurityPolicy is deprecated in Kubernetes 1.21+ and removed in 1.25+
+# Using Pod Security Standards instead via namespace labels
+# The namespace label is applied in k8s/base/namespace.yaml
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: runtime-security
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-processor
+  namespace: runtime-security
+spec:
+  podSelector:
+    matchLabels:
+      app: security-event-processor
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: security-dashboard
+    - podSelector:
+        matchLabels:
+          app: falco
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: incident-response-controller
+    ports:
+    - protocol: TCP
+      port: 8000

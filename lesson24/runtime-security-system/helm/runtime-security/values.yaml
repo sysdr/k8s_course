@@ -1,0 +1,36 @@
+namespace: runtime-security
+
+securityEventProcessor:
+  replicas: 2
+  image: security-event-processor:latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+incidentResponseController:
+  replicas: 1
+  image: incident-response-controller:latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+threatSimulator:
+  replicas: 1
+  image: threat-simulator:latest
+
+securityDashboard:
+  replicas: 1
+  image: security-dashboard:latest
+  serviceType: LoadBalancer
+
+falco:
+  enabled: true
+  image: falcosecurity/falco-no-driver:latest

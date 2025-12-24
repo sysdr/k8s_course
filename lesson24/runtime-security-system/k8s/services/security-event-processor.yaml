@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: security-event-processor-service
+  namespace: runtime-security
+spec:
+  selector:
+    app: security-event-processor
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: security-event-processor
+  namespace: runtime-security
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: security-event-processor
+  template:
+    metadata:
+      labels:
+        app: security-event-processor
+        version: v1
+    spec:
+      containers:
+      - name: processor
+        image: security-event-processor:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          readOnlyRootFilesystem: false
