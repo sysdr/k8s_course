@@ -1,0 +1,34 @@
+---
+# FIXED: RoleBinding in production namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deployer-binding
+  namespace: production  # CORRECT: In target namespace
+  labels:
+    app: ci-cd-deployer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: deployer-role  # References role in production namespace
+subjects:
+- kind: ServiceAccount
+  name: deployer
+  namespace: ci-cd  # ServiceAccount in ci-cd can be granted permissions in production
+---
+# RoleBinding for staging namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deployer-binding
+  namespace: staging
+  labels:
+    app: ci-cd-deployer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: deployer-role
+subjects:
+- kind: ServiceAccount
+  name: deployer
+  namespace: ci-cd

@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-app
+  namespace: production
+  labels:
+    app: sample-app
+    environment: production
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sample-app
+  template:
+    metadata:
+      labels:
+        app: sample-app
+    spec:
+      containers:
+      - name: app
+        image: sample-app:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: APP_VERSION
+          value: "1.0.0"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-app
+  namespace: production
+  labels:
+    app: sample-app
+spec:
+  selector:
+    app: sample-app
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  type: ClusterIP

@@ -1,0 +1,40 @@
+k8s-rbac-debugging/
+├── app/
+│   ├── deployer/
+│   │   ├── deployer.py              # CI/CD deployment automation
+│   │   ├── requirements.txt          # Python dependencies
+│   │   └── Dockerfile                # Deployer container image
+│   └── sample-app/
+│       ├── app.py                    # Simple Flask application
+│       ├── requirements.txt          # App dependencies
+│       └── Dockerfile                # App container image
+├── k8s/
+│   ├── namespaces/
+│   │   └── namespaces.yaml           # ci-cd, production, staging
+│   ├── rbac/
+│   │   ├── broken/                   # Intentionally misconfigured RBAC
+│   │   │   ├── serviceaccount.yaml   # ServiceAccount in ci-cd
+│   │   │   ├── role.yaml             # Role in WRONG namespace
+│   │   │   └── rolebinding.yaml      # RoleBinding in WRONG namespace
+│   │   └── fixed/                    # Corrected RBAC configuration
+│   │       ├── serviceaccount.yaml   # ServiceAccount definition
+│   │       ├── roles.yaml            # Roles in CORRECT namespaces
+│   │       └── rolebindings.yaml     # RoleBindings in CORRECT namespaces
+│   ├── ci-cd/
+│   │   └── deployer-job.yaml         # Job that triggers deployment
+│   └── applications/
+│       └── sample-app.yaml           # Sample app Deployment + Service
+├── scripts/
+│   ├── setup-cluster.sh              # Create local K8s cluster (kind/minikube)
+│   ├── deploy.sh                     # Deploy with broken or fixed RBAC
+│   ├── cleanup.sh                    # Remove all resources
+│   └── debugging/
+│       ├── diagnose-rbac.sh          # The Five-Minute Security Drill
+│       └── test-permissions.sh       # Test individual RBAC permissions
+├── docs/
+│   └── TROUBLESHOOTING.md            # Comprehensive troubleshooting guide
+├── monitoring/
+│   └── prometheus-rules.yaml         # RBAC monitoring alerts
+├── README.md                          # Main documentation
+└── PROJECT_STRUCTURE.txt              # This file
+

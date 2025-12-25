@@ -1,0 +1,63 @@
+---
+# FIXED: Role created in production namespace where deployments will happen
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deployer-role
+  namespace: production  # CORRECT: In target namespace
+  labels:
+    app: ci-cd-deployer
+rules:
+# Full deployment management
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["create", "get", "list", "update", "patch", "delete"]
+# Deployment scaling - subresource permission
+- apiGroups: ["apps"]
+  resources: ["deployments/scale"]
+  verbs: ["get", "update", "patch"]
+# Service management
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["create", "get", "list", "update", "patch"]
+# ConfigMap management
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["create", "get", "list", "update", "patch"]
+# Secret read access (not create - secrets should be pre-created)
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+# Pod management for status checking
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+# Pod logs for debugging
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get", "list"]
+---
+# Role for staging namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deployer-role
+  namespace: staging
+  labels:
+    app: ci-cd-deployer
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["create", "get", "list", "update", "patch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments/scale"]
+  verbs: ["get", "update", "patch"]
+- apiGroups: [""]
+  resources: ["services", "configmaps"]
+  verbs: ["create", "get", "list", "update", "patch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list", "watch"]

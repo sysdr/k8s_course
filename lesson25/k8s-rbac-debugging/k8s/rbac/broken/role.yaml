@@ -1,0 +1,20 @@
+---
+# BROKEN: This Role is defined in the ci-cd namespace
+# but the deployer needs to create resources in the production namespace
+# Roles are namespace-scoped and cannot grant cross-namespace permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deployer-role
+  namespace: ci-cd  # WRONG: Should be in production namespace
+  labels:
+    app: ci-cd-deployer
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["create", "get", "list", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["services", "configmaps"]
+  verbs: ["create", "get", "list", "update"]
+# MISSING: No permission for secrets
+# MISSING: No permission for deployment/scale subresource
