@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-processor
+  labels:
+    app: log-processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-processor
+  template:
+    metadata:
+      labels:
+        app: log-processor
+    spec:
+      containers:
+      - name: log-processor
+        image: log-processor:latest
+        imagePullPolicy: Never
+        env:
+        - name: LOG_FILE
+          value: "/data/logs/app.log"
+        - name: METRICS_FILE
+          value: "/data/metrics/metrics.json"
+        volumeMounts:
+        - name: log-storage
+          mountPath: /data
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: log-storage
+        persistentVolumeClaim:
+          claimName: log-ingestion-pvc

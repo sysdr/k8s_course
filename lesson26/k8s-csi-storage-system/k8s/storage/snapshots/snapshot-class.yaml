@@ -1,0 +1,8 @@
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: csi-aws-snapshots
+driver: ebs.csi.aws.com
+deletionPolicy: Delete
+parameters:
+  tagSpecification_1: "Name=kubernetes-snapshot"

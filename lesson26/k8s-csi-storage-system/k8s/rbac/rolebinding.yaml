@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: log-analytics-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: log-analytics-sa
+roleRef:
+  kind: Role
+  name: log-analytics-role
+  apiGroup: rbac.authorization.k8s.io
