@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer
+  namespace: database
+  labels:
+    app: pgbouncer
+    component: connection-pooler
+spec:
+  type: ClusterIP
+  selector:
+    app: pgbouncer
+    component: connection-pooler
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: pgbouncer
+  - port: 9127
+    targetPort: 9127
+    protocol: TCP
+    name: metrics

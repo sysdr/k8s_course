@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: database
+data:
+  01-create-schemas.sql: |
+    -- Create application schemas
+    CREATE SCHEMA IF NOT EXISTS app;
+    CREATE SCHEMA IF NOT EXISTS analytics;
+    CREATE SCHEMA IF NOT EXISTS audit;
+    
+    -- Enable extensions
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    
+  02-create-tables.sql: |
+    -- Application tables
+    CREATE TABLE IF NOT EXISTS app.users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+    );
+    
+    CREATE INDEX idx_users_email ON app.users(email);
+    CREATE INDEX idx_users_created_at ON app.users(created_at);
+    
+    CREATE TABLE IF NOT EXISTS app.sessions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id INTEGER REFERENCES app.users(id) ON DELETE CASCADE,
+        session_token TEXT NOT NULL,
+        ip_address INET,
+        user_agent TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        expires_at TIMESTAMP NOT NULL
+    );
+    
+    CREATE INDEX idx_sessions_user_id ON app.sessions(user_id);
+    CREATE INDEX idx_sessions_token ON app.sessions(session_token);
+    CREATE INDEX idx_sessions_expires ON app.sessions(expires_at);
+    
+    CREATE TABLE IF NOT EXISTS app.queries (
+        id BIGSERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES app.users(id),
+        query_text TEXT NOT NULL,
+        execution_time_ms FLOAT,
+        rows_returned INTEGER,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+    
+    CREATE INDEX idx_queries_user_id ON app.queries(user_id);
+    CREATE INDEX idx_queries_created_at ON app.queries(created_at);
+    
+    -- Analytics tables
+    CREATE TABLE IF NOT EXISTS analytics.query_stats (
+        id BIGSERIAL PRIMARY KEY,
+        query_hash TEXT NOT NULL,
+        total_calls BIGINT DEFAULT 0,
+        total_time FLOAT DEFAULT 0,
+        min_time FLOAT,
+        max_time FLOAT,
+        mean_time FLOAT,
+        stddev_time FLOAT,
+        updated_at TIMESTAMP DEFAULT NOW()
+    );
+    
+    CREATE UNIQUE INDEX idx_query_stats_hash ON analytics.query_stats(query_hash);
+    
+    -- Audit tables
+    CREATE TABLE IF NOT EXISTS audit.connection_logs (
+        id BIGSERIAL PRIMARY KEY,
+        username VARCHAR(255),
+        database_name VARCHAR(255),
+        application_name TEXT,
+        client_addr INET,
+        connected_at TIMESTAMP DEFAULT NOW(),
+        disconnected_at TIMESTAMP
+    );
+    
+    CREATE INDEX idx_connection_logs_connected ON audit.connection_logs(connected_at);
+    CREATE INDEX idx_connection_logs_username ON audit.connection_logs(username);
+    
+  03-create-functions.sql: |
+    -- Update timestamp trigger function
+    CREATE OR REPLACE FUNCTION update_updated_at_column()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        NEW.updated_at = NOW();
+        RETURN NEW;
+    END;
+    $$ language 'plpgsql';
+    
+    CREATE TRIGGER update_users_updated_at 
+        BEFORE UPDATE ON app.users
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at_column();
+    
+    -- Query statistics function
+    CREATE OR REPLACE FUNCTION analytics.update_query_stats()
+    RETURNS TRIGGER AS $$
+    DECLARE
+        v_hash TEXT;
+    BEGIN
+        v_hash := MD5(NEW.query_text);
+        
+        INSERT INTO analytics.query_stats (
+            query_hash, 
+            total_calls, 
+            total_time, 
+            min_time, 
+            max_time, 
+            mean_time
+        )
+        VALUES (
+            v_hash, 
+            1, 
+            NEW.execution_time_ms, 
+            NEW.execution_time_ms, 
+            NEW.execution_time_ms, 
+            NEW.execution_time_ms
+        )
+        ON CONFLICT (query_hash) DO UPDATE SET
+            total_calls = query_stats.total_calls + 1,
+            total_time = query_stats.total_time + NEW.execution_time_ms,
+            min_time = LEAST(query_stats.min_time, NEW.execution_time_ms),
+            max_time = GREATEST(query_stats.max_time, NEW.execution_time_ms),
+            mean_time = (query_stats.total_time + NEW.execution_time_ms) / (query_stats.total_calls + 1),
+            updated_at = NOW();
+        
+        RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+    
+    CREATE TRIGGER update_query_stats_trigger
+        AFTER INSERT ON app.queries
+        FOR EACH ROW
+        EXECUTE FUNCTION analytics.update_query_stats();

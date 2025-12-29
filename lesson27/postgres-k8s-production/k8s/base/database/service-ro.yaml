@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-ro
+  namespace: database
+  labels:
+    app: postgres
+    component: database
+    role: replica
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+    component: database
+    role: replica
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgresql
