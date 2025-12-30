@@ -1,0 +1,48 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: transaction-api-role
+  namespace: transaction-system
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: transaction-api-velero-role
+rules:
+- apiGroups: ["velero.io"]
+  resources: ["backups", "restores"]
+  verbs: ["get", "list", "create", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: transaction-api-rolebinding
+  namespace: transaction-system
+subjects:
+- kind: ServiceAccount
+  name: transaction-api
+  namespace: transaction-system
+roleRef:
+  kind: Role
+  name: transaction-api-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: transaction-api-velero-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: transaction-api
+  namespace: transaction-system
+roleRef:
+  kind: ClusterRole
+  name: transaction-api-velero-role
+  apiGroup: rbac.authorization.k8s.io

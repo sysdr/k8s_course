@@ -1,0 +1,67 @@
+# Velero Installation Configuration
+# For production, use Helm chart or velero CLI
+# This is a simplified manifest for demonstration
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: velero
+  namespace: velero
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: velero
+subjects:
+- kind: ServiceAccount
+  name: velero
+  namespace: velero
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: velero-config
+  namespace: velero
+data:
+  # MinIO configuration for local testing
+  backup-location.yaml: |
+    apiVersion: velero.io/v1
+    kind: BackupStorageLocation
+    metadata:
+      name: default
+      namespace: velero
+    spec:
+      provider: aws
+      objectStorage:
+        bucket: velero-backups
+      config:
+        region: minio
+        s3ForcePathStyle: "true"
+        s3Url: http://minio:9000
+  
+  volume-snapshot-location.yaml: |
+    apiVersion: velero.io/v1
+    kind: VolumeSnapshotLocation
+    metadata:
+      name: default
+      namespace: velero
+    spec:
+      provider: aws
+      config:
+        region: minio
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloud-credentials
+  namespace: velero
+type: Opaque
+stringData:
+  cloud: |
+    [default]
+    aws_access_key_id = minio
+    aws_secret_access_key = minio123
