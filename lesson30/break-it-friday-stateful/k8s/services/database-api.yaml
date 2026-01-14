@@ -1,0 +1,268 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database-api
+  namespace: break-it-friday
+  labels:
+    app: database-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database-api
+  template:
+    metadata:
+      labels:
+        app: database-api
+    spec:
+      containers:
+      - name: database-api
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            apt-get update && \
+            apt-get install -y --no-install-recommends gcc libpq-dev curl && \
+            pip install fastapi uvicorn[standard] psycopg2-binary redis pydantic python-multipart && \
+            python3 -c "
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import redis
+import os
+import logging
+import time
+from datetime import datetime
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title='Database Health Monitor')
+
+POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'postgres.scenario-01.svc.cluster.local')
+POSTGRES_DB = os.getenv('POSTGRES_DB', 'debugdb')
+POSTGRES_USER = os.getenv('POSTGRES_USER', 'debuguser')
+POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'debugpass123')
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis.scenario-05.svc.cluster.local')
+
+class HealthCheck(BaseModel):
+    service: str
+    status: str
+    latency_ms: float
+    timestamp: datetime
+    details: Optional[dict] = None
+
+def get_postgres_connection():
+    max_retries = 3
+    retry_delay = 2
+    for attempt in range(max_retries):
+        try:
+            conn = psycopg2.connect(
+                host=POSTGRES_HOST,
+                database=POSTGRES_DB,
+                user=POSTGRES_USER,
+                password=POSTGRES_PASSWORD,
+                connect_timeout=5
+            )
+            return conn
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.warning(f'PostgreSQL connection attempt {attempt + 1} failed: {e}')
+                time.sleep(retry_delay)
+            else:
+                raise
+
+def get_redis_connection():
+    return redis.Redis(host=REDIS_HOST, port=6379, db=0, socket_timeout=5, decode_responses=False)
+
+@app.get('/')
+async def root():
+    return {
+        'service': 'Database Health Monitor',
+        'version': '1.0.0',
+        'purpose': 'Monitor stateful application health for debugging scenarios'
+    }
+
+@app.get('/health', response_model=HealthCheck)
+async def health_check():
+    return HealthCheck(
+        service='api',
+        status='healthy',
+        latency_ms=0.5,
+        timestamp=datetime.utcnow()
+    )
+
+@app.get('/health/postgres', response_model=HealthCheck)
+async def postgres_health():
+    start_time = time.time()
+    try:
+        conn = get_postgres_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('SELECT version();')
+        version = cursor.fetchone()
+        cursor.execute('SELECT pg_database_size(current_database()) as db_size, pg_size_pretty(pg_database_size(current_database())) as db_size_pretty;')
+        storage = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        latency = (time.time() - start_time) * 1000
+        return HealthCheck(
+            service='postgresql',
+            status='healthy',
+            latency_ms=round(latency, 2),
+            timestamp=datetime.utcnow(),
+            details={
+                'version': version['version'],
+                'database_size': storage['db_size_pretty'],
+                'database_size_bytes': storage['db_size']
+            }
+        )
+    except Exception as e:
+        logger.error(f'PostgreSQL health check failed: {e}')
+        latency = (time.time() - start_time) * 1000
+        raise HTTPException(
+            status_code=503,
+            detail={
+                'service': 'postgresql',
+                'status': 'unhealthy',
+                'error': str(e),
+                'latency_ms': round(latency, 2)
+            }
+        )
+
+@app.get('/health/redis', response_model=HealthCheck)
+async def redis_health():
+    start_time = time.time()
+    try:
+        r = get_redis_connection()
+        r.ping()
+        info = r.info()
+        latency = (time.time() - start_time) * 1000
+        return HealthCheck(
+            service='redis',
+            status='healthy',
+            latency_ms=round(latency, 2),
+            timestamp=datetime.utcnow(),
+            details={
+                'connected_clients': info.get('connected_clients', 0),
+                'used_memory': info.get('used_memory_human', '0B'),
+                'uptime_seconds': info.get('uptime_in_seconds', 0)
+            }
+        )
+    except Exception as e:
+        logger.error(f'Redis health check failed: {e}')
+        latency = (time.time() - start_time) * 1000
+        raise HTTPException(
+            status_code=503,
+            detail={
+                'service': 'redis',
+                'status': 'unhealthy',
+                'error': str(e),
+                'latency_ms': round(latency, 2)
+            }
+        )
+
+@app.get('/health/all')
+async def all_health_checks():
+    results = {
+        'timestamp': datetime.utcnow().isoformat(),
+        'services': {}
+    }
+    try:
+        pg_result = await postgres_health()
+        results['services']['postgresql'] = pg_result.dict()
+    except HTTPException as e:
+        results['services']['postgresql'] = e.detail
+    except Exception as e:
+        results['services']['postgresql'] = {'status': 'unhealthy', 'error': str(e)}
+    try:
+        redis_result = await redis_health()
+        results['services']['redis'] = redis_result.dict()
+    except HTTPException as e:
+        results['services']['redis'] = e.detail
+    except Exception as e:
+        results['services']['redis'] = {'status': 'unhealthy', 'error': str(e)}
+    all_healthy = all(
+        service.get('status') == 'healthy'
+        for service in results['services'].values()
+    )
+    results['overall_status'] = 'healthy' if all_healthy else 'degraded'
+    return results
+
+@app.post('/debug/simulate-load')
+async def simulate_database_load(duration_seconds: int = 30):
+    import asyncio
+    async def run_load_test():
+        end_time = time.time() + duration_seconds
+        operations = 0
+        while time.time() < end_time:
+            try:
+                conn = get_postgres_connection()
+                cursor = conn.cursor()
+                cursor.execute('SELECT pg_sleep(0.1);')
+                cursor.close()
+                conn.close()
+                r = get_redis_connection()
+                r.set(f'load_test_{operations}', f'value_{operations}')
+                r.get(f'load_test_{operations}')
+                operations += 1
+                await asyncio.sleep(0.1)
+            except Exception as e:
+                logger.error(f'Load test error: {e}')
+    asyncio.create_task(run_load_test())
+    return {
+        'message': f'Load test started for {duration_seconds} seconds',
+        'note': 'Check /health/all for service status'
+    }
+
+import uvicorn
+uvicorn.run(app, host='0.0.0.0', port=8000)
+"
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: POSTGRES_HOST
+          value: "postgres.scenario-01.svc.cluster.local"
+        - name: POSTGRES_DB
+          value: "debugdb"
+        - name: POSTGRES_USER
+          value: "debuguser"
+        - name: POSTGRES_PASSWORD
+          value: "debugpass123"
+        - name: REDIS_HOST
+          value: "redis.scenario-05.svc.cluster.local"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database-api
+  namespace: break-it-friday
+spec:
+  selector:
+    app: database-api
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP

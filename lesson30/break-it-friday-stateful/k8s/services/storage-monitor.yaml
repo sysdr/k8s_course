@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage-monitor
+  namespace: break-it-friday
+  labels:
+    app: storage-monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: storage-monitor
+  template:
+    metadata:
+      labels:
+        app: storage-monitor
+    spec:
+      serviceAccountName: storage-monitor
+      containers:
+      - name: storage-monitor
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            pip install kubernetes && \
+            python3 -c "
+from kubernetes import client, config
+from datetime import datetime
+import time
+import logging
+import os
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    config.load_incluster_config()
+except:
+    config.load_kube_config()
+
+v1 = client.CoreV1Api()
+storage_v1 = client.StorageV1Api()
+
+def check_pvcs(namespace):
+    try:
+        pvcs = v1.list_namespaced_persistent_volume_claim(namespace)
+        for pvc in pvcs.items:
+            status = pvc.status.phase
+            name = pvc.metadata.name
+            if status == 'Pending':
+                logger.warning(f'PVC {name} in {namespace} is PENDING')
+            elif status == 'Bound':
+                logger.info(f'PVC {name} in {namespace} is BOUND')
+    except Exception as e:
+        logger.error(f'Error checking PVCs in {namespace}: {e}')
+
+def monitor_loop(interval=30):
+    logger.info('Starting storage monitor...')
+    while True:
+        logger.info(f'--- Storage Check at {datetime.now()} ---')
+        for ns in ['scenario-01', 'scenario-02', 'scenario-03', 'scenario-04', 'scenario-05', 'scenario-06']:
+            try:
+                check_pvcs(ns)
+            except:
+                pass
+        time.sleep(interval)
+
+monitor_loop()
+"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: storage-monitor
+  namespace: break-it-friday
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: storage-monitor
+  namespace: break-it-friday
+rules:
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims", "events"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: storage-monitor
+  namespace: break-it-friday
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: storage-monitor
+subjects:
+- kind: ServiceAccount
+  name: storage-monitor
+  namespace: break-it-friday

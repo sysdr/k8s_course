@@ -1,0 +1,213 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: break-it-friday
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - name: frontend-config
+          mountPath: /usr/share/nginx/html
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: frontend-config
+        configMap:
+          name: frontend-html
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-html
+  namespace: break-it-friday
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Break-It-Friday: Stateful Debugger</title>
+      <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+      <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+      <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: 500; margin-left: 10px; }
+        .status.healthy { background: #4caf50; color: white; }
+        .status.unhealthy { background: #f44336; color: white; }
+        .status.degraded { background: #ff9800; color: white; }
+        .metric { margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px; }
+        .metric-label { font-weight: 500; color: #666; }
+        .metric-value { font-size: 24px; font-weight: 700; color: #333; }
+        button { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #5568d3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .loading { text-align: center; padding: 40px; }
+        .error { background: #ffebee; color: #c62828; padding: 15px; border-radius: 4px; margin: 10px 0; }
+      </style>
+    </head>
+    <body>
+      <div id="root"></div>
+      <script type="text/babel">
+        const { useState, useEffect } = React;
+        const API_BASE = 'http://database-api.break-it-friday.svc.cluster.local:8000';
+        
+        function App() {
+          const [healthData, setHealthData] = useState(null);
+          const [loading, setLoading] = useState(true);
+          const [error, setError] = useState(null);
+          const [lastUpdate, setLastUpdate] = useState(null);
+          
+          const fetchHealthData = async () => {
+            try {
+              setLoading(true);
+              const response = await fetch(`${API_BASE}/health/all`);
+              if (!response.ok) throw new Error('Failed to fetch');
+              const data = await response.json();
+              setHealthData(data);
+              setLastUpdate(new Date());
+              setError(null);
+            } catch (err) {
+              setError(err.message);
+              console.error('Failed to fetch health data:', err);
+            } finally {
+              setLoading(false);
+            }
+          };
+          
+          useEffect(() => {
+            fetchHealthData();
+            const interval = setInterval(fetchHealthData, 10000);
+            return () => clearInterval(interval);
+          }, []);
+          
+          if (loading && !healthData) {
+            return (
+              <div className="container">
+                <div className="loading">
+                  <h2>Loading health data...</h2>
+                </div>
+              </div>
+            );
+          }
+          
+          if (error && !healthData) {
+            return (
+              <div className="container">
+                <div className="error">
+                  Failed to connect to backend: {error}
+                  <br />
+                  <button onClick={fetchHealthData} style={{marginTop: '10px'}}>Retry</button>
+                </div>
+              </div>
+            );
+          }
+          
+          return (
+            <div className="container">
+              <div className="header">
+                <h1>🔍 Stateful Application Debugger</h1>
+                <button onClick={fetchHealthData} disabled={loading}>
+                  {loading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+              
+              {healthData && (
+                <>
+                  <div className="card">
+                    <h2>Overall System Status</h2>
+                    <div>
+                      Status: <span className={`status ${healthData.overall_status}`}>
+                        {healthData.overall_status.toUpperCase()}
+                      </span>
+                    </div>
+                    <div style={{marginTop: '10px', color: '#666'}}>
+                      Last updated: {lastUpdate ? lastUpdate.toLocaleTimeString() : 'Never'}
+                    </div>
+                  </div>
+                  
+                  <div className="grid">
+                    {Object.entries(healthData.services || {}).map(([serviceName, serviceData]) => (
+                      <div className="card" key={serviceName}>
+                        <h3>{serviceName.charAt(0).toUpperCase() + serviceName.slice(1)}</h3>
+                        <div>
+                          Status: <span className={`status ${serviceData.status || 'unknown'}`}>
+                            {(serviceData.status || 'unknown').toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="metric">
+                          <div className="metric-label">Latency</div>
+                          <div className="metric-value">
+                            {serviceData.latency_ms ? `${serviceData.latency_ms} ms` : 'N/A'}
+                          </div>
+                        </div>
+                        {serviceData.details && (
+                          <div>
+                            <h4 style={{marginTop: '15px', marginBottom: '10px'}}>Details:</h4>
+                            {Object.entries(serviceData.details).map(([key, value]) => (
+                              <div key={key} style={{margin: '5px 0', fontSize: '14px'}}>
+                                <strong>{key.replace(/_/g, ' ').toUpperCase()}:</strong> {String(value)}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {serviceData.error && (
+                          <div className="error" style={{marginTop: '10px'}}>
+                            Error: {serviceData.error}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        }
+        
+        ReactDOM.render(<App />, document.getElementById('root'));
+      </script>
+    </body>
+    </html>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: break-it-friday
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  type: ClusterIP

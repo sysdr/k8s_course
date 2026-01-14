@@ -1,0 +1,111 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.eslintcache
+.parcel-cache
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+/tmp/*.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Kubernetes
+*.kubeconfig
+kubeconfig
+
+# Istio
+*istio*
+*Istio*
+
+# Temporary files
+*.tmp
+*.temp
+*.pid
+*.lock
+.cache/
+
+# OS files
+Thumbs.db
+.DS_Store
+*.swp
+*.swo
+
+# Project specific
+/tmp/database-api.pid
+/tmp/frontend.pid
+/tmp/database-api.log
+/tmp/frontend.log
+
+# Build artifacts
+*.tar.gz
+*.zip
+build/
+dist/
+
+# Secrets and keys (if any)
+*secret*
+*key*
+*.pem
+*.key
+*.crt
+secrets/
+.secrets/
+
+# Documentation builds
+docs/_build/
+site/
+
+# Test files
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Local development
+.local/
+local/

@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scenario-02
+---
+# BROKEN: Quota too restrictive for storage requirements
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: storage-quota
+  namespace: scenario-02
+spec:
+  hard:
+    requests.storage: "5Gi"  # WRONG: Too low, StatefulSet needs 15Gi total (3 replicas × 5Gi)
+    persistentvolumeclaims: "2"  # WRONG: Only 2 PVCs, but StatefulSet needs 3
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql-cluster
+  namespace: scenario-02
+spec:
+  serviceName: mysql
+  replicas: 3  # Needs 3 PVCs but quota only allows 2
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: rootpass123
+        - name: MYSQL_DATABASE
+          value: clusterdb
+        ports:
+        - containerPort: 3306
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: fast-ssd-retain
+      resources:
+        requests:
+          storage: 5Gi  # Each replica needs 5Gi = 15Gi total
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: scenario-02
+spec:
+  selector:
+    app: mysql
+  ports:
+  - port: 3306
+    targetPort: 3306
+  clusterIP: None

@@ -1,0 +1,25 @@
+# Correct StorageClass for the debugging scenarios
+# This is what students need to reference when fixing Scenario 1
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd-retain
+provisioner: kubernetes.io/no-provisioner  # For local testing; use cloud provisioner in production
+reclaimPolicy: Retain  # IMPORTANT: Prevent accidental data deletion
+volumeBindingMode: WaitForFirstConsumer  # Delay binding until pod is scheduled
+allowVolumeExpansion: true
+parameters:
+  type: gp3  # Example: AWS EBS gp3 for production
+  iops: "3000"
+  throughput: "125"
+---
+# Add a default StorageClass for convenience
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer

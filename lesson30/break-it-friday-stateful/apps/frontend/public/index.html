@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Break-It-Friday: Stateful Debugger Dashboard</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .status-healthy {
+            background: #4caf50;
+            color: white;
+        }
+        .status-unhealthy {
+            background: #f44336;
+            color: white;
+        }
+        .status-degraded {
+            background: #ff9800;
+            color: white;
+        }
+        .metric {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        .metric-label {
+            font-weight: 500;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #f44336;
+        }
+        .info {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .service-card {
+            border-top: 4px solid #667eea;
+        }
+        .service-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .details {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .detail-item {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .detail-key {
+            font-weight: 500;
+            color: #666;
+        }
+        .detail-value {
+            color: #333;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:8000' 
+            : `http://${window.location.hostname}:8000`;
+        
+        function App() {
+            const [healthData, setHealthData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [lastUpdate, setLastUpdate] = useState(null);
+            
+            const fetchHealthData = async () => {
+                try {
+                    setLoading(true);
+                    const response = await fetch(`${API_BASE}/health/all`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    setHealthData(data);
+                    setLastUpdate(new Date());
+                    setError(null);
+                } catch (err) {
+                    setError(err.message);
+                    console.error('Failed to fetch health data:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            useEffect(() => {
+                fetchHealthData();
+                const interval = setInterval(fetchHealthData, 10000);
+                return () => clearInterval(interval);
+            }, []);
+            
+            if (loading && !healthData) {
+                return (
+                    <div className="container">
+                        <div className="loading">
+                            <div className="loading-spinner"></div>
+                            <h2>Loading health data...</h2>
+                            <p>Connecting to API at {API_BASE}</p>
+                        </div>
+                    </div>
+                );
+            }
+            
+            if (error && !healthData) {
+                return (
+                    <div className="container">
+                        <div className="card">
+                            <div className="error">
+                                <h2>Connection Error</h2>
+                                <p>Failed to connect to backend: {error}</p>
+                                <p style={{marginTop: '10px', fontSize: '14px'}}>API URL: {API_BASE}</p>
+                                <button onClick={fetchHealthData} style={{marginTop: '15px'}}>
+                                    Retry Connection
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            
+            const getStatusClass = (status) => {
+                if (!status) return 'status-degraded';
+                switch(status.toLowerCase()) {
+                    case 'healthy': return 'status-healthy';
+                    case 'unhealthy': return 'status-unhealthy';
+                    case 'degraded': return 'status-degraded';
+                    default: return 'status-degraded';
+                }
+            };
+            
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>🔍 Stateful Application Debugger Dashboard</h1>
+                        <button onClick={fetchHealthData} disabled={loading}>
+                            {loading ? 'Refreshing...' : '🔄 Refresh'}
+                        </button>
+                    </div>
+                    
+                    {healthData && (
+                        <>
+                            <div className="card">
+                                <h2 style={{marginBottom: '15px', color: '#333'}}>Overall System Status</h2>
+                                <div>
+                                    <span className={`status-badge ${getStatusClass(healthData.overall_status)}`}>
+                                        {healthData.overall_status ? healthData.overall_status.toUpperCase() : 'UNKNOWN'}
+                                    </span>
+                                </div>
+                                <div style={{marginTop: '15px', color: '#666', fontSize: '14px'}}>
+                                    Last updated: {lastUpdate ? lastUpdate.toLocaleTimeString() : 'Never'}
+                                </div>
+                                {error && (
+                                    <div className="error" style={{marginTop: '15px'}}>
+                                        Warning: {error}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="grid">
+                                {Object.entries(healthData.services || {}).map(([serviceName, serviceData]) => (
+                                    <div className="card service-card" key={serviceName}>
+                                        <h3>{serviceName.charAt(0).toUpperCase() + serviceName.slice(1)}</h3>
+                                        <div style={{marginBottom: '15px'}}>
+                                            <span className={`status-badge ${getStatusClass(serviceData.status)}`}>
+                                                {(serviceData.status || 'unknown').toUpperCase()}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="metric">
+                                            <div className="metric-label">Latency</div>
+                                            <div className="metric-value">
+                                                {serviceData.latency_ms ? `${parseFloat(serviceData.latency_ms).toFixed(2)} ms` : 'N/A'}
+                                            </div>
+                                        </div>
+                                        
+                                        {serviceData.details && Object.keys(serviceData.details).length > 0 && (
+                                            <div className="details">
+                                                <h4 style={{marginBottom: '10px', color: '#666', fontSize: '14px'}}>Details:</h4>
+                                                {Object.entries(serviceData.details).map(([key, value]) => (
+                                                    <div className="detail-item" key={key}>
+                                                        <span className="detail-key">{key.replace(/_/g, ' ').toUpperCase()}:</span>
+                                                        <span className="detail-value">{String(value)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        
+                                        {serviceData.error && (
+                                            <div className="error" style={{marginTop: '15px'}}>
+                                                <strong>Error:</strong> {serviceData.error}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {(!healthData.services || Object.keys(healthData.services).length === 0) && (
+                                <div className="card">
+                                    <div className="info">
+                                        <h3>No Services Found</h3>
+                                        <p>No service health data is available. Make sure the API is running and accessible.</p>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
