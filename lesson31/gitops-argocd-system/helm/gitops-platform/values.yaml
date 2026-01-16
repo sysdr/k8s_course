@@ -1,0 +1,66 @@
+global:
+  environment: prod
+  
+metricsAggregator:
+  replicaCount: 2
+  image:
+    repository: metrics-aggregator
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+eventProcessor:
+  replicaCount: 2
+  image:
+    repository: event-processor
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+
+dashboard:
+  replicaCount: 2
+  image:
+    repository: dashboard
+    tag: latest
+  service:
+    type: LoadBalancer
+    port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+istio:
+  enabled: true
+  gateway:
+    hosts:
+    - gitops.example.com
+
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
