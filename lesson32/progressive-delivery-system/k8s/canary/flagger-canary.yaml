@@ -1,0 +1,78 @@
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: order-service
+  namespace: progressive-delivery
+spec:
+  # Target deployment
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service
+  
+  # Progressive delivery settings
+  progressDeadlineSeconds: 600
+  
+  # HPA reference
+  autoscalerRef:
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    name: order-service-hpa
+  
+  service:
+    port: 8080
+    targetPort: 8080
+    portName: http
+    gateways:
+    - progressive-delivery-gateway
+    hosts:
+    - "*"
+    trafficPolicy:
+      tls:
+        mode: ISTIO_MUTUAL
+  
+  # Canary analysis
+  analysis:
+    # Analysis interval
+    interval: 1m
+    
+    # Max traffic percentage routed to canary
+    maxWeight: 50
+    
+    # Canary increment step
+    stepWeight: 10
+    
+    # Number of checks before promotion
+    threshold: 5
+    
+    # Max number of failed checks before rollback
+    iterations: 10
+    
+    # Metrics for automated canary analysis
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 1m
+    
+    - name: request-duration
+      thresholdRange:
+        max: 500
+      interval: 1m
+    
+    # Prometheus metrics templates
+    metricsServer: http://prometheus.istio-system:9090
+    
+    # Webhooks for custom validation
+    webhooks:
+    - name: load-test
+      type: rollout
+      url: http://flagger-loadtester.progressive-delivery/
+      timeout: 5s
+      metadata:
+        cmd: "hey -z 1m -q 10 -c 2 http://order-service-canary:8080/health"
+  
+  # Rollback conditions
+  rollbackConditions:
+  - type: Ready
+    status: "False"

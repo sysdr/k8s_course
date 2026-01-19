@@ -1,0 +1,93 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: progressive-delivery-gateway
+  namespace: progressive-delivery
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: order-service
+  namespace: progressive-delivery
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - progressive-delivery-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/orders"
+    - uri:
+        prefix: "/health"
+    - uri:
+        prefix: "/metrics"
+    route:
+    - destination:
+        host: order-service
+        port:
+          number: 8080
+        subset: stable
+      weight: 100
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: order-service
+  namespace: progressive-delivery
+spec:
+  host: order-service
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_REQUEST
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 2
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 40
+  subsets:
+  - name: stable
+    labels:
+      version: v1
+  - name: canary
+    labels:
+      version: v2
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: payment-gateway
+  namespace: progressive-delivery
+spec:
+  host: payment-gateway
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    connectionPool:
+      tcp:
+        maxConnections: 50
+      http:
+        http1MaxPendingRequests: 25
+        http2MaxRequests: 50
+  subsets:
+  - name: stable
+    labels:
+      version: v1
