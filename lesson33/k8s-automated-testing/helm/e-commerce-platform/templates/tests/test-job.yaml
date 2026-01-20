@@ -1,0 +1,33 @@
+{{- if .Values.testing.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-integration-tests
+  namespace: {{ .Values.namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: {{ .Values.testing.testSuites.integration.timeout | default 600 }}
+  template:
+    spec:
+      serviceAccountName: ecommerce-sa
+      restartPolicy: Never
+      containers:
+      - name: test-runner
+        image: test-runner:latest
+        imagePullPolicy: Never
+        command: ["python", "-m", "pytest"]
+        args:
+          - "tests/integration/"
+          - "-v"
+        env:
+        - name: PRODUCT_SERVICE_URL
+          value: "http://product-service:8000"
+        - name: ORDER_SERVICE_URL
+          value: "http://order-service:8001"
+        - name: PAYMENT_SERVICE_URL
+          value: "http://payment-service:8002"
+{{- end }}

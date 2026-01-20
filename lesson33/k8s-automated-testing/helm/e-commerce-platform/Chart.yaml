@@ -1,0 +1,14 @@
+apiVersion: v2
+name: e-commerce-platform
+description: Production E-Commerce Platform with Automated Testing
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - ecommerce
+  - microservices
+  - kubernetes
+  - testing
+maintainers:
+  - name: Platform Team
+    email: platform@example.com

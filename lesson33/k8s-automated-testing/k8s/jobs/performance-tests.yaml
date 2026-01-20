@@ -1,0 +1,82 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: performance-tests
+  namespace: ecommerce
+  labels:
+    test-suite: performance
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900  # 15 minute timeout
+  ttlSecondsAfterFinished: 7200  # Keep results for 2 hours
+  template:
+    metadata:
+      labels:
+        test-suite: performance
+    spec:
+      serviceAccountName: ecommerce-sa
+      restartPolicy: Never
+      containers:
+      - name: load-test
+        image: grafana/k6:latest
+        command: ["k6", "run"]
+        args:
+          - "--vus=50"
+          - "--duration=5m"
+          - "/scripts/load-test.js"
+        volumeMounts:
+        - name: test-scripts
+          mountPath: /scripts
+        env:
+        - name: PRODUCT_SERVICE_URL
+          value: "http://product-service:8000"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      volumes:
+      - name: test-scripts
+        configMap:
+          name: performance-test-scripts
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: performance-test-scripts
+  namespace: ecommerce
+data:
+  load-test.js: |
+    import http from 'k6/http';
+    import { check, sleep } from 'k6';
+
+    const BASE_URL = __ENV.PRODUCT_SERVICE_URL;
+
+    export let options = {
+      thresholds: {
+        http_req_duration: ['p(95)<500'], // 95% of requests must complete below 500ms
+        http_req_failed: ['rate<0.05'],   // Error rate must be below 5%
+      },
+    };
+
+    export default function () {
+      // Test product listing
+      let res = http.get(`${BASE_URL}/api/v1/products`);
+      check(res, {
+        'status is 200': (r) => r.status === 200,
+        'response time < 500ms': (r) => r.timings.duration < 500,
+      });
+
+      sleep(1);
+
+      // Test specific product fetch
+      res = http.get(`${BASE_URL}/api/v1/products/prod-001`);
+      check(res, {
+        'status is 200': (r) => r.status === 200,
+        'has product data': (r) => r.json('name') !== undefined,
+      });
+
+      sleep(1);
+    }

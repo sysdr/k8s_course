@@ -1,0 +1,85 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  product-service:
+    image: product-service:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  order-service:
+    image: order-service:latest
+    ports:
+      - "8001:8001"
+    environment:
+      - PRODUCT_SERVICE_URL=http://product-service:8000
+      - PAYMENT_SERVICE_URL=http://payment-service:8002
+    depends_on:
+      - product-service
+      - payment-service
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  payment-service:
+    image: payment-service:latest
+    ports:
+      - "8002:8002"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8002/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  test-results-aggregator:
+    image: test-results-aggregator:latest
+    ports:
+      - "8003:8003"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8003/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  frontend:
+    image: node:18-alpine
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - BROWSER=none
+    command: sh -c "cd /app && npm install --legacy-peer-deps && npm install ajv@^8.0.0 --legacy-peer-deps && npm start"
+    depends_on:
+      - product-service
+      - order-service
+      - payment-service
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules

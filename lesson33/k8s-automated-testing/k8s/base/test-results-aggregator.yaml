@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-results-aggregator
+  namespace: ecommerce
+  labels:
+    app: test-results-aggregator
+spec:
+  selector:
+    app: test-results-aggregator
+  ports:
+    - port: 8003
+      targetPort: 8003
+      name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-results-aggregator
+  namespace: ecommerce
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-results-aggregator
+  template:
+    metadata:
+      labels:
+        app: test-results-aggregator
+    spec:
+      serviceAccountName: ecommerce-sa
+      containers:
+      - name: aggregator
+        image: test-results-aggregator:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8003
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"

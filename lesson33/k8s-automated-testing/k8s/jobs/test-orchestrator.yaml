@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-test-suite
+  namespace: ecommerce
+spec:
+  schedule: "0 2 * * *"  # Run at 2 AM daily
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          serviceAccountName: ecommerce-sa
+          restartPolicy: Never
+          containers:
+          - name: test-orchestrator
+            image: bitnami/kubectl:latest
+            command: ["/bin/bash", "-c"]
+            args:
+              - |
+                set -e
+                echo "Starting nightly test suite..."
+                
+                # Run smoke tests first
+                kubectl create -f /manifests/smoke-tests.yaml -n ecommerce
+                kubectl wait --for=condition=complete --timeout=300s job/smoke-tests -n ecommerce
+                
+                # Run integration tests
+                kubectl create -f /manifests/integration-tests.yaml -n ecommerce
+                kubectl wait --for=condition=complete --timeout=600s job/integration-tests -n ecommerce
+                
+                # Run performance tests
+                kubectl create -f /manifests/performance-tests.yaml -n ecommerce
+                kubectl wait --for=condition=complete --timeout=900s job/performance-tests -n ecommerce
+                
+                # Check quality gates
+                GATE_STATUS=$(curl -s http://test-results-aggregator:8003/api/v1/gate/check | jq -r '.gate_passed')
+                
+                if [ "$GATE_STATUS" != "true" ]; then
+                  echo "Quality gates failed!"
+                  exit 1
+                fi
+                
+                echo "All tests passed quality gates!"
+            volumeMounts:
+            - name: test-manifests
+              mountPath: /manifests
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "256Mi"
+                cpu: "200m"
+          volumes:
+          - name: test-manifests
+            configMap:
+              name: test-job-manifests
