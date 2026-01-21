@@ -1,0 +1,195 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+venv/
+.venv/
+ENV/
+env/
+.env
+.venv
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+package-lock.json
+yarn.lock
+
+# React / Frontend
+frontend/build/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/.cache/
+frontend/.parcel-cache/
+frontend/.next/
+frontend/dist/
+
+# Docker
+*.log
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Kubernetes
+*.kubeconfig
+kubeconfig
+*.pem
+*.key
+*.crt
+*.csr
+
+# Secrets and API Keys
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+secrets/
+.secrets/
+.env
+.env.local
+.env.*.local
+*.secret
+*secret*
+*password*
+*api_key*
+*apikey*
+*API_KEY*
+*SECRET*
+*TOKEN*
+credentials.json
+credentials.yaml
+
+# Istio
+istio/
+istio-*/
+*.istio.yaml
+*.istio.yml
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Test coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.hypothesis/
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# Local configuration
+config.local.*
+settings.local.*
+*.local.*
+
+# Backup files
+*.backup
+*.bak
+*.old
+*.orig
+
+# Helm
+.helm/
+charts/*.tgz
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Ansible
+*.retry
+
+# Vagrant
+.vagrant/
+
+# Miscellaneous
+*.pid
+*.seed
+*.pid.lock
+.cache/

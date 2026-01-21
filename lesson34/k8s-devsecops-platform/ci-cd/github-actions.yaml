@@ -1,0 +1,204 @@
+name: DevSecOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner (filesystem)
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-fs-results.sarif'
+        severity: 'CRITICAL,HIGH'
+    
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-fs-results.sarif'
+    
+    - name: Run secret scanning
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: ${{ github.event.repository.default_branch }}
+        head: HEAD
+  
+  build-and-scan-images:
+    name: Build and Scan Container Images
+    runs-on: ubuntu-latest
+    needs: security-scan
+    strategy:
+      matrix:
+        service: [api-gateway, auth-service, log-processor, analytics-service, frontend]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build image
+      run: |
+        if [ "${{ matrix.service }}" = "frontend" ]; then
+          docker build -t ${{ matrix.service }}:${{ env.IMAGE_TAG }} ./frontend
+        else
+          docker build -t ${{ matrix.service }}:${{ env.IMAGE_TAG }} ./services/${{ matrix.service }}
+        fi
+    
+    - name: Run Trivy vulnerability scanner (image)
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: '${{ matrix.service }}:${{ env.IMAGE_TAG }}'
+        format: 'sarif'
+        output: 'trivy-${{ matrix.service }}-results.sarif'
+        severity: 'CRITICAL,HIGH'
+        exit-code: '1'
+    
+    - name: Upload Trivy results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-${{ matrix.service }}-results.sarif'
+    
+    - name: Sign image with Cosign
+      if: github.ref == 'refs/heads/main'
+      run: |
+        # Install cosign
+        curl -LO https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64
+        chmod +x cosign-linux-amd64
+        
+        # Sign image (requires COSIGN_KEY secret)
+        # ./cosign-linux-amd64 sign --key env://COSIGN_KEY ${{ matrix.service }}:${{ env.IMAGE_TAG }}
+        echo "Image signing would happen here in production"
+  
+  policy-validation:
+    name: Validate Kubernetes Policies
+    runs-on: ubuntu-latest
+    needs: security-scan
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install Kyverno CLI
+      run: |
+        curl -LO https://github.com/kyverno/kyverno/releases/download/v1.11.0/kyverno-cli_v1.11.0_linux_x86_64.tar.gz
+        tar -xzf kyverno-cli_v1.11.0_linux_x86_64.tar.gz
+        chmod +x kyverno
+        sudo mv kyverno /usr/local/bin/
+    
+    - name: Validate manifests against policies
+      run: |
+        kyverno apply k8s/security/kyverno-policies.yaml \
+          --resource k8s/base/ \
+          --policy-report \
+          --detailed-results
+    
+    - name: Scan IaC with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'config'
+        scan-ref: 'k8s/'
+        format: 'sarif'
+        output: 'trivy-k8s-results.sarif'
+        severity: 'CRITICAL,HIGH'
+        exit-code: '1'
+  
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [build-and-scan-images, policy-validation]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Create kind cluster
+      uses: helm/kind-action@v1.8.0
+      with:
+        cluster_name: test-cluster
+    
+    - name: Load images to kind
+      run: |
+        for service in api-gateway auth-service log-processor analytics-service frontend; do
+          if [ "$service" = "frontend" ]; then
+            docker build -t $service:test ./frontend
+          else
+            docker build -t $service:test ./services/$service
+          fi
+          kind load docker-image $service:test --name test-cluster
+        done
+    
+    - name: Deploy to test cluster
+      run: |
+        kubectl create namespace devsecops
+        kubectl apply -f k8s/base/
+    
+    - name: Wait for deployments
+      run: |
+        kubectl wait --for=condition=available --timeout=300s \
+          deployment --all -n devsecops
+    
+    - name: Run integration tests
+      run: |
+        # Add your integration tests here
+        echo "Integration tests would run here"
+  
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      run: |
+        echo "Would deploy to staging environment"
+        # kubectl apply -f k8s/base/ --context=staging-cluster
+  
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      run: |
+        echo "Would deploy to production environment"
+        # kubectl apply -f k8s/base/ --context=prod-cluster
+    
+    - name: Run smoke tests
+      run: |
+        echo "Smoke tests would run here"

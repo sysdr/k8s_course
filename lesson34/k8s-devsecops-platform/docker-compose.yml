@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - LOG_PROCESSOR_URL=http://log-processor:8002
+      - ANALYTICS_SERVICE_URL=http://analytics-service:8003
+      - SECURITY_SERVICE_URL=http://security-service:8004
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-CHANGE-THIS-SECRET-IN-PRODUCTION}
+    depends_on:
+      - auth-service
+      - log-processor
+      - analytics-service
+      - security-service
+    networks:
+      - devsecops-network
+  
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-CHANGE-THIS-SECRET-IN-PRODUCTION}
+      - TOKEN_EXPIRE_MINUTES=30
+    networks:
+      - devsecops-network
+  
+  log-processor:
+    build:
+      context: ./services/log-processor
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    networks:
+      - devsecops-network
+  
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    networks:
+      - devsecops-network
+  
+  security-service:
+    build:
+      context: ./services/security-service
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    networks:
+      - devsecops-network
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - devsecops-network
+
+networks:
+  devsecops-network:
+    driver: bridge

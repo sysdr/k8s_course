@@ -1,0 +1,42 @@
+# Trivy configuration file
+scan:
+  # Skip files and directories
+  skip-dirs:
+    - node_modules
+    - .git
+    - __pycache__
+  
+  # Security checks
+  security-checks:
+    - vuln
+    - config
+    - secret
+  
+  # Vulnerability severity levels
+  severity:
+    - CRITICAL
+    - HIGH
+    - MEDIUM
+  
+  # Ignore unfixed vulnerabilities
+  ignore-unfixed: false
+
+# Vulnerability database
+db:
+  # Skip DB update (use for CI/CD with pre-warmed cache)
+  skip-update: false
+
+# Output format
+format: json
+
+# Exit code on vulnerabilities
+exit-code: 1
+
+# Vulnerability ignore list
+ignores:
+  # Example: Ignore specific CVE with justification
+  # - id: CVE-2021-12345
+  #   paths:
+  #     - "package.json"
+  #   expires: "2024-12-31"
+  #   reason: "Accepted risk - no patch available, compensating controls in place"
