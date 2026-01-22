@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-config
+  namespace: logging-system
+data:
+  loki.yaml: |
+    auth_enabled: false
+
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9096
+      log_level: info
+
+    common:
+      path_prefix: /loki
+      storage:
+        filesystem:
+          chunks_directory: /loki/chunks
+          rules_directory: /loki/rules
+      replication_factor: 1
+      ring:
+        kvstore:
+          store: inmemory
+
+    schema_config:
+      configs:
+        - from: 2023-01-01
+          store: boltdb-shipper
+          object_store: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+
+    ruler:
+      alertmanager_url: http://alertmanager:9093
+
+    limits_config:
+      enforce_metric_name: false
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      ingestion_rate_mb: 10
+      ingestion_burst_size_mb: 20
+      max_label_name_length: 1024
+      max_label_value_length: 2048
+      max_label_names_per_series: 30
+      max_streams_per_user: 10000
+      max_query_lookback: 720h
+
+    compactor:
+      working_directory: /loki/compactor
+      shared_store: filesystem
+      compaction_interval: 10m
+      retention_enabled: true
+      retention_delete_delay: 2h
+      retention_delete_worker_count: 150
+
+    chunk_store_config:
+      max_look_back_period: 720h
+
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 720h
+
+    query_range:
+      align_queries_with_step: true
+      max_retries: 5
+      parallelise_shardable_queries: true
+      cache_results: true
+
+    frontend:
+      compress_responses: true
+      max_outstanding_per_tenant: 256
+
+    querier:
+      max_concurrent: 20
