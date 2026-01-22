@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: order-service-monitor
+  namespace: ecommerce
+  labels:
+    app: order-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: order-service
+  endpoints:
+  - port: http
+    interval: 15s
+    path: /metrics
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - ecommerce

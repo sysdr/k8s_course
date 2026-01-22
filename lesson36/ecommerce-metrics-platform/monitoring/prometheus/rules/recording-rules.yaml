@@ -1,0 +1,51 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ecommerce-recording-rules
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+  - name: ecommerce.orders
+    interval: 30s
+    rules:
+    # Pre-compute order rate by status
+    - record: job:orders_total:rate5m
+      expr: sum(rate(orders_total[5m])) by (job, status)
+    
+    # Pre-compute order processing latency percentiles
+    - record: job:order_processing_duration:p50
+      expr: histogram_quantile(0.50, sum(rate(order_processing_duration_seconds_bucket[5m])) by (job, le))
+    
+    - record: job:order_processing_duration:p95
+      expr: histogram_quantile(0.95, sum(rate(order_processing_duration_seconds_bucket[5m])) by (job, le))
+    
+    - record: job:order_processing_duration:p99
+      expr: histogram_quantile(0.99, sum(rate(order_processing_duration_seconds_bucket[5m])) by (job, le))
+    
+    # Error rate calculation
+    - record: job:orders:error_rate
+      expr: sum(rate(orders_total{status="failed"}[5m])) / sum(rate(orders_total[5m]))
+    
+  - name: ecommerce.payments
+    interval: 30s
+    rules:
+    # Payment success rate
+    - record: job:payments:success_rate
+      expr: sum(rate(payments_processed_total{status="approved"}[5m])) / sum(rate(payments_processed_total[5m]))
+    
+    # Payment latency by method
+    - record: job:payment_duration:p99_by_method
+      expr: histogram_quantile(0.99, sum(rate(payment_processing_duration_seconds_bucket[5m])) by (method, le))
+    
+  - name: ecommerce.business
+    interval: 60s
+    rules:
+    # Revenue per minute
+    - record: business:revenue_per_minute
+      expr: sum(rate(order_value_total_dollars[1m]))
+    
+    # Average order value
+    - record: business:average_order_value
+      expr: sum(rate(order_value_total_dollars[5m])) / sum(rate(orders_total[5m]))
