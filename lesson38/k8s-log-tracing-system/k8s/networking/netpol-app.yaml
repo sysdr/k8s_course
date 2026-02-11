@@ -1,0 +1,74 @@
+# Default-deny all ingress in the app namespace, then allow only the
+# specific flows we need.  This is the single most under-used K8s security
+# primitive — most teams skip it entirely.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: app
+spec:
+  podSelector: {}                 # select ALL pods
+  policyTypes: ["Ingress"]
+---
+# Allow: frontend → analytics-service (HTTP)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-analytics
+  namespace: app
+spec:
+  podSelector:
+    matchLabels:
+      app: analytics-service
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - protocol: TCP
+          port: 8002
+---
+# Allow: ingress controller → log-ingestor
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-ingestor
+  namespace: app
+spec:
+  podSelector:
+    matchLabels:
+      app: log-ingestor
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+      ports:
+        - protocol: TCP
+          port: 8000
+---
+# Allow: Prometheus (observability ns) → /metrics on all app pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: app
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8001
+        - protocol: TCP
+          port: 8002

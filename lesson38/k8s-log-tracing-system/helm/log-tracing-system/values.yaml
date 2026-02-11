@@ -1,0 +1,71 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# values.yaml — environment-specific overrides live here.
+# CI injects --set overrides; production uses a values-production.yaml overlay.
+# ─────────────────────────────────────────────────────────────────────────────
+
+global:
+  imageRegistry: ""               # prefix all images: registry.example.com/
+  imagePullPolicy: IfNotPresent
+
+# ── per-service tuning ────────────────────────────────────────────────────────
+logIngestor:
+  enabled: true
+  replicaCount: 2
+  image:
+    name: log-ingestor
+    tag:  "latest"
+  resources:
+    requests:  { cpu: "100m", memory: "128Mi" }
+    limits:    { cpu: "500m", memory: "256Mi" }
+  hpa:
+    enabled:    true
+    minReplicas: 2
+    maxReplicas: 10
+    cpuThreshold: 60
+
+logProcessor:
+  enabled: true
+  replicaCount: 2
+  image:
+    name: log-processor
+    tag:  "latest"
+  resources:
+    requests:  { cpu: "150m", memory: "192Mi" }
+    limits:    { cpu: "600m", memory: "384Mi" }
+
+analyticsService:
+  enabled: true
+  replicaCount: 2
+  image:
+    name: analytics-service
+    tag:  "latest"
+  resources:
+    requests:  { cpu: "100m", memory: "128Mi" }
+    limits:    { cpu: "400m", memory: "256Mi" }
+
+frontend:
+  enabled: true
+  replicaCount: 2
+  image:
+    name: frontend
+    tag:  "latest"
+
+# ── monitoring ────────────────────────────────────────────────────────────────
+monitoring:
+  enabled: true
+  jaeger:
+    enabled:  true
+    sampler:  0.1                  # probabilistic 10 %
+
+# ── istio ─────────────────────────────────────────────────────────────────────
+istio:
+  enabled: true
+  mTLS:    STRICT
+
+# ── ingress ───────────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  host: logs.example.com
+  tls:
+    enabled: true
+    secretName: tls-cert-secret

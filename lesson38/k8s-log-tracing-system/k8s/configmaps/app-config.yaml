@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: app
+data:
+  KAFKA_BROKERS:    "kafka.messaging.svc.cluster.local:9092"
+  POSTGRES_HOST:    "postgres.messaging.svc.cluster.local"
+  REDIS_HOST:       "redis.messaging.svc.cluster.local"
+  OTLP_ENDPOINT:    "http://otel-collector.observability.svc.cluster.local:4317"
+  LOG_LEVEL:        "INFO"
+  TOPIC_NAME:       "log-events"

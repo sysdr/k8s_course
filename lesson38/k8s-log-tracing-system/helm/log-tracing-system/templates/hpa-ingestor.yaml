@@ -1,0 +1,21 @@
+{{- if and .Values.logIngestor.enabled .Values.logIngestor.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "log-tracing-system.fullname" . }}-ingestor-hpa
+  namespace: app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "log-tracing-system.fullname" . }}-ingestor
+  minReplicas: {{ .Values.logIngestor.hpa.minReplicas }}
+  maxReplicas: {{ .Values.logIngestor.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.logIngestor.hpa.cpuThreshold }}
+{{- end }}

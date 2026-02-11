@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-ingestor
+  namespace: app
+  labels:
+    app: log-ingestor
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: log-ingestor
+  template:
+    metadata:
+      labels:
+        app: log-ingestor
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "8000"
+        prometheus.io/path:   "/metrics"
+    spec:
+      serviceAccountName: log-ingestor-sa
+      # ── topology spread: spread pods across nodes ─────────────────────
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: log-ingestor
+      containers:
+        - name: log-ingestor
+          image: log-ingestor:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          # ── resource budget: ALWAYS set both requests AND limits ────────
+          # Requests → scheduler uses these for bin-packing.
+          # Limits   → cgroup ceiling; OOM-killed if exceeded.
+          resources:
+            requests:
+              cpu:    "100m"
+              memory: "128Mi"
+            limits:
+              cpu:    "500m"
+              memory: "256Mi"
+          env:
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key:  KAFKA_BROKERS
+            - name: OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key:  OTLP_ENDPOINT
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key:  LOG_LEVEL
+          # ── probes ────────────────────────────────────────────────────
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds:       10
+            failureThreshold:    3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds:       5
+            failureThreshold:    2
+          # graceful shutdown: give in-flight Kafka produces time to flush
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 2"]
+      # ── security context (pod-level) ──────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser:    1000
+        fsGroup:      1000

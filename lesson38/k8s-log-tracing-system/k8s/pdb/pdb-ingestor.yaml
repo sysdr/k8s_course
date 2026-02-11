@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-ingestor-pdb
+  namespace: app
+spec:
+  minAvailable: 1                 # always keep ≥1 pod running during evictions
+  selector:
+    matchLabels:
+      app: log-ingestor

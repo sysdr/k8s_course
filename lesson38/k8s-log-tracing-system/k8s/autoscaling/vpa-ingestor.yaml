@@ -1,0 +1,24 @@
+# Vertical Pod Autoscaler — requires the VPA admission controller.
+# In kind/minikube you may need to install it separately.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: log-ingestor-vpa
+  namespace: app
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: log-ingestor
+  updatePolicy:
+    updateMode: "Recreate"        # applies on next pod restart only
+  resourcePolicy:
+    containerPolicies:
+      - containerName: log-ingestor
+        minAllowed:
+          cpu:    "50m"
+          memory: "64Mi"
+        maxAllowed:
+          cpu:    "1"
+          memory: "512Mi"
+        controlledResources: ["cpu", "memory"]

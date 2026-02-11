@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-ingestor
+  namespace: app
+  labels:
+    app: log-ingestor
+spec:
+  type: ClusterIP
+  selector:
+    app: log-ingestor
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP

@@ -1,0 +1,42 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  namespace: app
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target:      /
+    nginx.ingress.kubernetes.io/ssl-redirect:        "true"
+    nginx.ingress.kubernetes.io/use-regex:           "true"
+    # rate-limit: 100 req/s per IP
+    nginx.ingress.kubernetes.io/limit-rps:           "100"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - logs.example.com
+      secretName: tls-cert-secret   # managed by cert-manager in prod
+  rules:
+    - host: logs.example.com
+      http:
+        paths:
+          - path: /ingest
+            pathType: Prefix
+            backend:
+              service:
+                name: log-ingestor
+                port:
+                  number: 8000
+          - path: /api/analytics/(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: analytics-service
+                port:
+                  number: 8002
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

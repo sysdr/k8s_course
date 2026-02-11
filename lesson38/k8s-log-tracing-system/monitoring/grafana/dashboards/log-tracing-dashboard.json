@@ -1,0 +1,81 @@
+{
+  "__inputs": [],
+  "annotations": { "list": [] },
+  "description": "Log Tracing System — latency, throughput, error rates",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Ingest Latency P99",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(log_ingestor_ingest_latency_seconds_bucket[5m])) by (le, service))",
+          "legendFormat": "{{ service }}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Events Received / sec",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(log_ingestor_events_received_total[1m])) by (severity)",
+          "legendFormat": "{{ severity }}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Kafka Produce Errors",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(log_ingestor_kafka_produce_errors_total[5m]))",
+          "legendFormat": "produce errors"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Processing Latency P95",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(log_processor_process_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "processor P95"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Pod Count — App NS",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "count(up{namespace=\"app\"})", "legendFormat": "" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Active Traces (Jaeger)",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 16 },
+      "targets": [
+        { "expr": "jaeger_collector_spans_received_total", "legendFormat": "" }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["tracing", "kubernetes", "log-system"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Log Tracing System",
+  "uid": "log-tracing-sys-001",
+  "version": 1
+}
