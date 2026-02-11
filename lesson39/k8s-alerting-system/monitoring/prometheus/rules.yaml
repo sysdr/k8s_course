@@ -1,0 +1,30 @@
+groups:
+  - name: sli_rules
+    interval: 30s
+    rules:
+      - record: job:log_ingestor_errors:rate5m
+        expr: |
+          sum(rate(log_ingestor_errors_total[5m])) by (service)
+          /
+          sum(rate(log_ingestor_requests_total[5m])) by (service)
+
+  - name: app_alerts
+    rules:
+      - alert: LogIngestorErrorRateSLOViolation
+        expr: job:log_ingestor_errors:rate5m > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          team: backend-platform
+        annotations:
+          summary: "Error rate exceeds 1% SLO"
+          description: "Current rate: {{ $value | humanizePercentage }}"
+      
+      - alert: HighErrorRateDetected
+        expr: log_analyzer_error_rate > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          team: platform-sre
+        annotations:
+          summary: "High error rate for {{ $labels.service }}"
