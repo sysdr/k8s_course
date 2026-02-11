@@ -1,0 +1,44 @@
+# CORRECTED ServiceMonitor
+# Fixes:
+# 1. Added 'team: platform' label for Prometheus discovery
+# 2. Changed port to 'metrics' instead of 'http'
+# 3. Corrected selector to match Service labels
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: log-processor-fixed
+  namespace: default
+  labels:
+    app: log-processor
+    team: platform  # FIXED: Added required label
+spec:
+  selector:
+    matchLabels:
+      app: log-processor
+      component: backend  # FIXED: Matches Service labels
+  endpoints:
+  - port: http  # FIXED: Use http port (8000) where /metrics endpoint is available
+    interval: 15s
+    path: /metrics
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - default
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: metrics-exporter
+  namespace: default
+  labels:
+    app: metrics-exporter
+    team: platform
+spec:
+  selector:
+    matchLabels:
+      app: metrics-exporter
+  endpoints:
+  - port: metrics
+    interval: 15s
+    path: /metrics
+    scheme: http

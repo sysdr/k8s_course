@@ -1,0 +1,109 @@
+# Prometheus Operator Helm Chart Values
+prometheus:
+  prometheusSpec:
+    # Service Monitor selector - ServiceMonitors must have 'team: platform' label
+    serviceMonitorSelector:
+      matchLabels:
+        team: platform
+    
+    # Retention and storage
+    retention: 7d
+    retentionSize: "10GB"
+    
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+    
+    # Resource limits
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 8Gi
+    
+    # Additional scrape configs for debugging
+    additionalScrapeConfigs:
+    - job_name: 'kubernetes-pods'
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+
+  # Alert Manager configuration
+  alerting:
+    alertmanagers:
+    - static_configs:
+      - targets:
+        - alertmanager:9093
+
+# Grafana integration
+grafana:
+  enabled: true
+  adminPassword: ""  # Set via secret in production - DO NOT commit passwords
+  
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-operated:9090
+        access: proxy
+        isDefault: false
+        editable: true
+
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+# AlertManager configuration
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+    
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+      receiver: 'default'
+      routes:
+      - match:
+          severity: critical
+        receiver: 'pagerduty'
+    
+    receivers:
+    - name: 'default'
+      webhook_configs:
+      - url: 'http://webhook-receiver:8080/alerts'
+    
+    - name: 'pagerduty'
+      pagerduty_configs:
+      - service_key: ''  # Set via environment variable or secret in production

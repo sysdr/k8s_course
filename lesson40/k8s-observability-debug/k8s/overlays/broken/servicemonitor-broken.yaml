@@ -1,0 +1,27 @@
+# INTENTIONALLY BROKEN ServiceMonitor for debugging exercise
+# Issues:
+# 1. Missing 'team: platform' label - Prometheus won't discover it
+# 2. Port name is 'http' instead of 'metrics' - scrapes wrong endpoint
+# 3. Selector matches wrong labels
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: log-processor-broken
+  namespace: default
+  labels:
+    app: log-processor
+    # MISSING: team: platform (required by Prometheus serviceMonitorSelector)
+spec:
+  selector:
+    matchLabels:
+      app: log-processor
+      # WRONG: should match Service labels exactly
+      tier: backend  # This label doesn't exist on the Service
+  endpoints:
+  - port: http  # WRONG: should be 'metrics' port
+    interval: 15s
+    path: /metrics
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - default

@@ -1,0 +1,66 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: observability-stack-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+    team: platform
+spec:
+  groups:
+  - name: observability.rules
+    interval: 30s
+    rules:
+    # Alert when Prometheus can't scrape targets
+    - alert: PrometheusTargetDown
+      expr: up == 0
+      for: 5m
+      labels:
+        severity: critical
+        component: prometheus
+      annotations:
+        summary: "Prometheus target is down"
+        description: "{{ $labels.job }} target {{ $labels.instance }} is down for more than 5 minutes"
+    
+    # Alert when ServiceMonitor doesn't produce targets
+    - alert: ServiceMonitorNoTargets
+      expr: |
+        count by (namespace, servicemonitor) (
+          prometheus_sd_kubernetes_services_total
+        ) == 0
+      for: 10m
+      labels:
+        severity: warning
+        component: prometheus
+      annotations:
+        summary: "ServiceMonitor has no discovered targets"
+        description: "ServiceMonitor {{ $labels.servicemonitor }} in {{ $labels.namespace }} has no targets for 10+ minutes"
+    
+    # Alert on high metric cardinality
+    - alert: HighMetricCardinality
+      expr: |
+        count by (job) (
+          count by (job, __name__) (
+            {__name__=~".+"}
+          )
+        ) > 10000
+      for: 15m
+      labels:
+        severity: warning
+        component: prometheus
+      annotations:
+        summary: "High cardinality detected"
+        description: "Job {{ $labels.job }} has {{ $value }} unique metrics, indicating potential cardinality explosion"
+    
+    # Alert when Grafana can't connect to Prometheus
+    - alert: GrafanaDatasourceError
+      expr: |
+        grafana_datasource_request_duration_seconds_count{status_code!="200"} > 10
+      for: 5m
+      labels:
+        severity: critical
+        component: grafana
+      annotations:
+        summary: "Grafana datasource errors detected"
+        description: "Grafana datasource {{ $labels.datasource }} is experiencing errors"
