@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: logging-system
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+
+      - job_name: 'logpipeline-operator'
+        static_configs:
+          - targets: ['logpipeline-operator:8080']
+
+      - job_name: 'log-collector'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - logging
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_component]
+            action: keep
+            regex: collector
+
+      - job_name: 'log-processor'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - logging
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_component]
+            action: keep
+            regex: processor
+
+      - job_name: 'log-sink'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - logging
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_component]
+            action: keep
+            regex: sink

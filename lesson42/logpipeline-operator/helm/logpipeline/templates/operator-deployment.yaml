@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "logpipeline.fullname" . }}-operator
+  labels:
+    {{- include "logpipeline.labels" . | nindent 4 }}
+    component: operator
+spec:
+  replicas: {{ .Values.operator.replicas }}
+  selector:
+    matchLabels:
+      {{- include "logpipeline.selectorLabels" . | nindent 6 }}
+      component: operator
+  template:
+    metadata:
+      labels:
+        {{- include "logpipeline.selectorLabels" . | nindent 8 }}
+        component: operator
+    spec:
+      serviceAccountName: {{ include "logpipeline.fullname" . }}-operator
+      containers:
+        - name: operator
+          image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}"
+          imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.operator.resources | nindent 12 }}

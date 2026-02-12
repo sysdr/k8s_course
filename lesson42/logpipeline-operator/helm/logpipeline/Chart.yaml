@@ -1,0 +1,13 @@
+apiVersion: v2
+name: logpipeline-operator
+description: A Helm chart for LogPipeline Operator
+type: application
+version: 1.0.0
+appVersion: "1.0"
+keywords:
+  - logging
+  - operator
+  - kubernetes
+maintainers:
+  - name: LogPipeline Team
+    email: team@logpipeline.io
