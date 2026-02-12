@@ -1,0 +1,99 @@
+k8s-cluster-autoscaler-demo/
+├── services/
+│   ├── log-ingestion/
+│   │   ├── app/
+│   │   │   └── main.py                    # FastAPI log ingestion service
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   ├── log-processor/
+│   │   ├── app/
+│   │   │   └── processor.py               # Kafka consumer & processor
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   └── analytics-api/
+│       ├── app/
+│       │   └── main.py                    # FastAPI analytics API
+│       ├── Dockerfile
+│       └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   └── LogSubmitForm.js
+│   │   ├── services/
+│   │   │   └── api.js
+│   │   ├── App.js                         # Main React application
+│   │   ├── index.js
+│   │   └── index.css
+│   ├── public/
+│   │   └── index.html
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   └── package.json
+├── k8s/
+│   ├── base/
+│   │   ├── namespace.yaml
+│   │   ├── redis.yaml                     # Redis deployment & service
+│   │   ├── kafka.yaml                     # Kafka + Zookeeper
+│   │   ├── log-ingestion.yaml
+│   │   ├── log-processor.yaml
+│   │   ├── analytics-api.yaml
+│   │   └── frontend.yaml
+│   ├── autoscaling/
+│   │   ├── hpa-log-ingestion.yaml         # HorizontalPodAutoscaler
+│   │   ├── hpa-log-processor.yaml
+│   │   ├── pdb-log-ingestion.yaml         # PodDisruptionBudget
+│   │   └── pdb-analytics-api.yaml
+│   ├── monitoring/
+│   │   ├── prometheus-config.yaml
+│   │   ├── prometheus.yaml
+│   │   └── grafana.yaml
+│   └── istio/
+│       ├── gateway.yaml                   # Istio Gateway
+│       ├── virtualservice-log-ingestion.yaml
+│       ├── destinationrule-log-ingestion.yaml
+│       └── peerauthentication.yaml        # mTLS configuration
+├── helm/
+│   └── log-platform/
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       └── templates/
+├── infrastructure/
+│   ├── kind-config.yaml                   # 2-node cluster config
+│   ├── kind-config-expanded.yaml          # 3-node cluster config
+│   └── docker-compose.yaml                # Local development
+├── scripts/
+│   ├── setup-cluster.sh                   # Create kind cluster
+│   ├── build.sh                           # Build & load Docker images
+│   ├── deploy.sh                          # Deploy to Kubernetes
+│   ├── monitoring-setup.sh                # Deploy Prometheus/Grafana
+│   ├── load-test.sh                       # Run load tests
+│   └── cleanup.sh                         # Cleanup resources
+├── load-tests/
+│   ├── locust_test.py                     # Locust load test
+│   └── requirements.txt
+├── README.md                              # Comprehensive documentation
+└── PROJECT_STRUCTURE.txt                  # This file
+
+Total Files: 50+
+Total Lines of Code: ~3000+
+
+Key Kubernetes Resources:
+  - 7 Deployments (services + infrastructure)
+  - 7 Services (ClusterIP, LoadBalancer)
+  - 2 HorizontalPodAutoscalers
+  - 2 PodDisruptionBudgets
+  - 1 Namespace
+  - Istio: 1 Gateway, 1 VirtualService, 1 DestinationRule, 1 PeerAuthentication
+  - Monitoring: Prometheus, Grafana with ServiceAccount/RBAC
+
+Production Patterns Demonstrated:
+  ✓ Horizontal Pod Autoscaling with behavior policies
+  ✓ Pod Disruption Budgets for high availability
+  ✓ Resource requests/limits for scheduler optimization
+  ✓ Health checks (liveness, readiness probes)
+  ✓ Service mesh with mTLS and circuit breakers
+  ✓ Observability stack (Prometheus + Grafana)
+  ✓ Manual cluster scaling simulation
+  ✓ Multi-tier architecture with message queues
+  ✓ Stateful services (Redis, Kafka)
+  ✓ Zero-downtime deployments
