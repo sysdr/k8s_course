@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: log-platform
+data:
+  KAFKA_TOPIC: "raw-logs"
+  LOG_LEVEL: "INFO"
+  PROCESSING_BATCH_SIZE: "100"

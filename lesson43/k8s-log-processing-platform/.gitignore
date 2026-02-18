@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Secrets / keys (never commit)
+*.pem
+.env.local
+.env.*.local
+secrets/
+
+# Docker
+.docker/
+
+# Generated platform (optional - uncomment if you don't want to track generated files)
+# k8s-log-processing-platform/
+
+# Logs
+*.log
+logs/
