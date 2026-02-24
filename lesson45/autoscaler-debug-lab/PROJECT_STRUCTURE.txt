@@ -1,0 +1,39 @@
+Cluster Autoscaler Debug Lab - Project Structure
+=================================================
+
+Generated: Tue Feb 24 04:16:27 UTC 2026
+Base Directory: /home/systemdr03/git/k8s_course/lesson45/autoscaler-debug-lab
+
+Directory Structure:
+/home/systemdr03/git/k8s_course/lesson45/autoscaler-debug-lab
+├── PROJECT_STRUCTURE.txt
+├── README.md
+├── configs
+│   └── aws-node-group-tags.yaml
+├── docs
+│   └── debugging-flowchart.md
+├── kubernetes
+│   ├── autoscaler
+│   │   └── cluster-autoscaler-deployment.yaml
+│   ├── manifests
+│   ├── monitoring
+│   │   └── autoscaler-servicemonitor.yaml
+│   └── scenarios
+│       ├── scenario-1-iam-failure.yaml
+│       ├── scenario-2-max-nodes.yaml
+│       ├── scenario-3-resource-quota.yaml
+│       ├── scenario-4-node-selector.yaml
+│       └── scenario-5-taints.yaml
+├── scripts
+│   ├── cleanup.sh
+│   ├── debug-autoscaler.sh
+│   ├── generate-iam-policy.sh
+│   ├── run-demo.sh
+│   ├── setup-local-cluster.sh
+│   ├── setup-monitoring.sh
+│   ├── trigger-scaling.sh
+│   └── validate-dashboard.sh
+└── tests
+    └── test-scenarios.sh
+
+10 directories, 20 files
