@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cost-dashboard
+  namespace: prod-logging
+  labels:
+    app: cost-dashboard
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cost-dashboard
+  template:
+    metadata:
+      labels:
+        app: cost-dashboard
+        tier: frontend
+    spec:
+      containers:
+      - name: cost-dashboard
+        image: cost-dashboard:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cost-dashboard-service
+  namespace: prod-logging
+  labels:
+    app: cost-dashboard
+spec:
+  selector:
+    app: cost-dashboard
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP

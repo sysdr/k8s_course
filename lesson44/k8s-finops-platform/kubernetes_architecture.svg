@@ -1,0 +1,259 @@
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#ffffff"/>
+  
+  <!-- Title -->
+  <text x="600" y="40" font-size="28" font-weight="bold" text-anchor="middle" fill="#1976d2">
+    Kubernetes FinOps Architecture
+  </text>
+  
+  <!-- Kubernetes Cluster Box -->
+  <rect x="50" y="80" width="1100" height="650" rx="10" fill="#e3f2fd" stroke="#1976d2" stroke-width="3" filter="url(#shadow)"/>
+  <text x="600" y="110" font-size="20" font-weight="bold" text-anchor="middle" fill="#1976d2">
+    Kubernetes Cluster
+  </text>
+  
+  <!-- Namespace: prod-logging -->
+  <g id="prod-namespace">
+    <rect x="80" y="140" width="320" height="250" rx="8" fill="#c8e6c9" stroke="#43a047" stroke-width="2" filter="url(#shadow)"/>
+    <text x="240" y="165" font-size="16" font-weight="bold" text-anchor="middle" fill="#2e7d32">
+      prod-logging
+    </text>
+    <text x="240" y="185" font-size="12" text-anchor="middle" fill="#555">
+      Quota: CPU 20 / Memory 40Gi
+    </text>
+    
+    <!-- Log Ingest Pods -->
+    <circle cx="140" cy="240" r="30" fill="#42a5f5" stroke="#1976d2" stroke-width="2" filter="url(#shadow)"/>
+    <text x="140" y="245" font-size="11" text-anchor="middle" fill="#fff">Log</text>
+    <text x="140" y="258" font-size="11" text-anchor="middle" fill="#fff">Ingest</text>
+    
+    <circle cx="240" cy="240" r="30" fill="#42a5f5" stroke="#1976d2" stroke-width="2" filter="url(#shadow)"/>
+    <text x="240" y="245" font-size="11" text-anchor="middle" fill="#fff">Log</text>
+    <text x="240" y="258" font-size="11" text-anchor="middle" fill="#fff">Ingest</text>
+    
+    <circle cx="340" cy="240" r="30" fill="#42a5f5" stroke="#1976d2" stroke-width="2" filter="url(#shadow)"/>
+    <text x="340" y="245" font-size="11" text-anchor="middle" fill="#fff">Log</text>
+    <text x="340" y="258" font-size="11" text-anchor="middle" fill="#fff">Ingest</text>
+    
+    <!-- HPA indicator -->
+    <rect x="100" y="300" width="280" height="60" rx="5" fill="#fff3e0" stroke="#f57c00" stroke-width="2"/>
+    <text x="240" y="325" font-size="12" font-weight="bold" text-anchor="middle" fill="#e65100">
+      HPA: 3-10 replicas
+    </text>
+    <text x="240" y="345" font-size="10" text-anchor="middle" fill="#666">
+      Target: CPU 70% / Memory 80%
+    </text>
+  </g>
+  
+  <!-- Namespace: staging-logging -->
+  <g id="staging-namespace">
+    <rect x="440" y="140" width="280" height="250" rx="8" fill="#fff9c4" stroke="#f9a825" stroke-width="2" filter="url(#shadow)"/>
+    <text x="580" y="165" font-size="16" font-weight="bold" text-anchor="middle" fill="#f57f17">
+      staging-logging
+    </text>
+    <text x="580" y="185" font-size="12" text-anchor="middle" fill="#555">
+      Quota: CPU 5 / Memory 10Gi
+    </text>
+    
+    <!-- Log Ingest Pod -->
+    <circle cx="580" cy="240" r="30" fill="#66bb6a" stroke="#43a047" stroke-width="2" filter="url(#shadow)"/>
+    <text x="580" y="245" font-size="11" text-anchor="middle" fill="#fff">Log</text>
+    <text x="580" y="258" font-size="11" text-anchor="middle" fill="#fff">Ingest</text>
+    
+    <!-- VPA indicator -->
+    <rect x="480" y="300" width="200" height="60" rx="5" fill="#e1f5fe" stroke="#0288d1" stroke-width="2"/>
+    <text x="580" y="325" font-size="12" font-weight="bold" text-anchor="middle" fill="#01579b">
+      VPA: Auto Mode
+    </text>
+    <text x="580" y="345" font-size="10" text-anchor="middle" fill="#666">
+      Right-sizing active
+    </text>
+  </g>
+  
+  <!-- Namespace: dev-logging -->
+  <g id="dev-namespace">
+    <rect x="760" y="140" width="280" height="250" rx="8" fill="#ffccbc" stroke="#ff5722" stroke-width="2" filter="url(#shadow)"/>
+    <text x="900" y="165" font-size="16" font-weight="bold" text-anchor="middle" fill="#d84315">
+      dev-logging
+    </text>
+    <text x="900" y="185" font-size="12" text-anchor="middle" fill="#555">
+      Quota: CPU 2 / Memory 4Gi
+    </text>
+    
+    <!-- Log Ingest Pod -->
+    <circle cx="900" cy="240" r="30" fill="#ef5350" stroke="#c62828" stroke-width="2" filter="url(#shadow)"/>
+    <text x="900" y="245" font-size="11" text-anchor="middle" fill="#fff">Log</text>
+    <text x="900" y="258" font-size="11" text-anchor="middle" fill="#fff">Ingest</text>
+    
+    <rect x="820" y="300" width="160" height="40" rx="5" fill="#f3e5f5" stroke="#8e24aa" stroke-width="2"/>
+    <text x="900" y="325" font-size="11" text-anchor="middle" fill="#4a148c">
+      1 replica (minimal cost)
+    </text>
+  </g>
+  
+  <!-- Monitoring Namespace -->
+  <g id="monitoring">
+    <rect x="80" y="430" width="960" height="270" rx="8" fill="#e8eaf6" stroke="#3f51b5" stroke-width="2" filter="url(#shadow)"/>
+    <text x="560" y="460" font-size="18" font-weight="bold" text-anchor="middle" fill="#283593">
+      Monitoring &amp; FinOps Namespace
+    </text>
+    
+    <!-- Prometheus -->
+    <g id="prometheus">
+      <rect x="120" y="480" width="140" height="100" rx="8" fill="#ff6f00" stroke="#e65100" stroke-width="2" filter="url(#shadow)"/>
+      <text x="190" y="510" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
+        Prometheus
+      </text>
+      <text x="190" y="530" font-size="10" text-anchor="middle" fill="#fff">
+        Metrics Collection
+      </text>
+      <text x="190" y="550" font-size="10" text-anchor="middle" fill="#fff">
+        Cost Recording Rules
+      </text>
+      <text x="190" y="565" font-size="10" text-anchor="middle" fill="#fff">
+        15-day retention
+      </text>
+    </g>
+    
+    <!-- Grafana -->
+    <g id="grafana">
+      <rect x="300" y="480" width="140" height="100" rx="8" fill="#f57c00" stroke="#ef6c00" stroke-width="2" filter="url(#shadow)"/>
+      <text x="370" y="510" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
+        Grafana
+      </text>
+      <text x="370" y="530" font-size="10" text-anchor="middle" fill="#fff">
+        Cost Dashboards
+      </text>
+      <text x="370" y="550" font-size="10" text-anchor="middle" fill="#fff">
+        Waste Detection
+      </text>
+      <text x="370" y="565" font-size="10" text-anchor="middle" fill="#fff">
+        Alerts
+      </text>
+    </g>
+    
+    <!-- Cost Analyzer -->
+    <g id="cost-analyzer">
+      <rect x="480" y="480" width="140" height="100" rx="8" fill="#66bb6a" stroke="#43a047" stroke-width="2" filter="url(#shadow)"/>
+      <text x="550" y="510" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
+        Cost Analyzer
+      </text>
+      <text x="550" y="530" font-size="10" text-anchor="middle" fill="#fff">
+        Real-time Calc
+      </text>
+      <text x="550" y="550" font-size="10" text-anchor="middle" fill="#fff">
+        Recommendations
+      </text>
+      <text x="550" y="565" font-size="10" text-anchor="middle" fill="#fff">
+        $0.048/vCPU-hr
+      </text>
+    </g>
+    
+    <!-- Cost Dashboard (React) -->
+    <g id="dashboard">
+      <rect x="660" y="480" width="140" height="100" rx="8" fill="#42a5f5" stroke="#1976d2" stroke-width="2" filter="url(#shadow)"/>
+      <text x="730" y="510" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
+        Dashboard
+      </text>
+      <text x="730" y="530" font-size="10" text-anchor="middle" fill="#fff">
+        React Frontend
+      </text>
+      <text x="730" y="550" font-size="10" text-anchor="middle" fill="#fff">
+        Real-time Costs
+      </text>
+      <text x="730" y="565" font-size="10" text-anchor="middle" fill="#fff">
+        Visualizations
+      </text>
+    </g>
+    
+    <!-- VPA Components -->
+    <g id="vpa">
+      <rect x="840" y="480" width="160" height="100" rx="8" fill="#ab47bc" stroke="#7b1fa2" stroke-width="2" filter="url(#shadow)"/>
+      <text x="920" y="505" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
+        VPA Components
+      </text>
+      <text x="920" y="525" font-size="10" text-anchor="middle" fill="#fff">
+        Recommender
+      </text>
+      <text x="920" y="540" font-size="10" text-anchor="middle" fill="#fff">
+        Updater
+      </text>
+      <text x="920" y="555" font-size="10" text-anchor="middle" fill="#fff">
+        Admission Controller
+      </text>
+      <text x="920" y="570" font-size="10" text-anchor="middle" fill="#fff">
+        Right-sizing Engine
+      </text>
+    </g>
+    
+    <!-- Cost Flow Arrows -->
+    <g id="cost-flow">
+      <text x="560" y="630" font-size="12" font-weight="bold" text-anchor="middle" fill="#555">
+        Cost Data Flow
+      </text>
+      
+      <!-- Arrow from pods to Prometheus -->
+      <path d="M 240 390 L 190 480" stroke="#ff6f00" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+      <text x="200" y="420" font-size="9" fill="#555">metrics</text>
+      
+      <!-- Arrow from Prometheus to Grafana -->
+      <path d="M 260 530 L 300 530" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+      
+      <!-- Arrow from Prometheus to Cost Analyzer -->
+      <path d="M 260 530 L 480 530" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+      
+      <!-- Arrow from Cost Analyzer to Dashboard -->
+      <path d="M 620 530 L 660 530" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+      
+      <!-- Arrow from VPA to pods -->
+      <path d="M 920 480 L 340 270" stroke="#ab47bc" stroke-width="2" fill="none" stroke-dasharray="5,5" marker-end="url(#arrowhead2)"/>
+      <text x="600" y="350" font-size="9" fill="#7b1fa2">recommendations</text>
+    </g>
+  </g>
+  
+  <!-- Cost Summary Box -->
+  <rect x="120" y="620" width="680" height="60" rx="5" fill="#ffffff" stroke="#1976d2" stroke-width="2" filter="url(#shadow)"/>
+  <text x="460" y="640" font-size="12" font-weight="bold" text-anchor="middle" fill="#1976d2">
+    Real-time Cost Tracking
+  </text>
+  <text x="250" y="660" font-size="10" text-anchor="middle" fill="#555">
+    Hourly: $8.42
+  </text>
+  <text x="460" y="660" font-size="10" text-anchor="middle" fill="#555">
+    Monthly Projection: $6,146
+  </text>
+  <text x="670" y="660" font-size="10" text-anchor="middle" fill="#f44336">
+    Waste: $2.45/hr (29%)
+  </text>
+  
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+    </marker>
+    <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#ab47bc"/>
+    </marker>
+  </defs>
+  
+  <!-- Legend -->
+  <g id="legend">
+    <text x="900" y="640" font-size="11" font-weight="bold" fill="#333">Legend:</text>
+    <circle cx="870" cy="655" r="8" fill="#42a5f5" stroke="#1976d2" stroke-width="1"/>
+    <text x="885" y="660" font-size="9" fill="#555">Pod</text>
+    
+    <rect x="930" y="647" width="16" height="16" rx="2" fill="#c8e6c9" stroke="#43a047" stroke-width="1"/>
+    <text x="952" y="660" font-size="9" fill="#555">Namespace</text>
+    
+    <line x1="1010" y1="655" x2="1040" y2="655" stroke="#333" stroke-width="2"/>
+    <polygon points="1040 655, 1035 652, 1035 658" fill="#333"/>
+    <text x="1045" y="660" font-size="9" fill="#555">Data Flow</text>
+  </g>
+</svg>

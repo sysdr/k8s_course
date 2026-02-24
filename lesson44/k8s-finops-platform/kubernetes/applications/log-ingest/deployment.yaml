@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-ingest
+  namespace: prod-logging
+  labels:
+    app: log-ingest
+    tier: backend
+    cost-center: platform-engineering
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: log-ingest
+  template:
+    metadata:
+      labels:
+        app: log-ingest
+        tier: backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: log-ingest
+        image: log-ingest:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        resources:
+          requests:
+            cpu: 300m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        - name: LOG_LEVEL
+          value: "INFO"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-ingest-service
+  namespace: prod-logging
+  labels:
+    app: log-ingest
+spec:
+  selector:
+    app: log-ingest
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP
