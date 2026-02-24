@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-ingestion
+  namespace: logging
+  labels:
+    app: log-ingestion
+    cluster: cluster-a
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: log-ingestion
+  template:
+    metadata:
+      labels:
+        app: log-ingestion
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: log-ingestion
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: log-ingestion
+        image: log-ingestion:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: log-ingestion-config
+              key: kafka_bootstrap_servers
+        - name: KAFKA_TOPIC
+          value: "logs"
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: log-ingestion-config
+              key: redis_url
+        - name: CLUSTER_ID
+          value: "cluster-a"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: log-ingestion
+  namespace: logging
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-ingestion-config
+  namespace: logging
+data:
+  kafka_bootstrap_servers: "kafka:9092"
+  redis_url: "redis://redis:6379"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-ingestion-pdb
+  namespace: logging
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: log-ingestion

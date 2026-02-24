@@ -1,0 +1,78 @@
+Cross-Cluster Kubernetes System - Project Structure
+Generated: Tue Feb 24 05:03:35 UTC 2026
+
+Total Directories: 44
+Total Files: 31
+
+Directory Tree:
+/home/systemdr03/git/k8s_course/lesson47/cross-cluster-k8s-system
+├── PROJECT_STRUCTURE.txt
+├── README.md
+├── cluster-a
+│   ├── helm
+│   │   └── log-ingestion
+│   ├── k8s
+│   │   ├── base
+│   │   └── monitoring
+│   └── services
+│       └── log-ingestion
+├── cluster-b
+│   ├── helm
+│   │   └── log-processor
+│   ├── k8s
+│   │   ├── base
+│   │   └── monitoring
+│   └── services
+│       └── log-processor
+├── docker-compose.yml
+├── frontend
+│   ├── package.json
+│   ├── public
+│   │   └── index.html
+│   └── src
+│       ├── App.jsx
+│       ├── components
+│       ├── index.js
+│       └── services
+├── infrastructure
+│   ├── kafka
+│   │   └── kafka-deployment.yaml
+│   ├── postgres
+│   │   └── postgres-deployment.yaml
+│   └── redis
+│       └── redis-deployment.yaml
+├── istio
+│   ├── cluster-a
+│   └── cluster-b
+├── monitoring
+│   ├── grafana
+│   │   └── dashboards
+│   ├── jaeger
+│   └── prometheus
+│       ├── prometheus-config.yaml
+│       └── prometheus-deployment.yaml
+├── scripts
+│   ├── build.sh
+│   ├── cleanup.sh
+│   ├── deploy.sh
+│   ├── run-demo.sh
+│   └── setup-cluster.sh
+└── tests
+    ├── integration
+    └── load
+        └── load-test.py
+
+38 directories, 18 files
+
+Key Components:
+- Python microservices (FastAPI)
+- Kubernetes manifests (Deployments, Services, HPA)
+- Helm charts (for both clusters)
+- Infrastructure (Kafka, PostgreSQL, Redis)
+- Monitoring stack (Prometheus, Grafana)
+- React frontend dashboard
+- Operational scripts (setup, build, deploy, cleanup)
+- Load testing tools
+- Complete documentation
+
+Status: READY FOR DEPLOYMENT

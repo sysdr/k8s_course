@@ -1,0 +1,31 @@
+{
+  "dashboard": {
+    "title": "Cross-Cluster Log Processing",
+    "panels": [
+      {
+        "title": "Total Logs Processed",
+        "targets": [
+          {
+            "expr": "sum(rate(logs_processed_total[5m]))"
+          }
+        ]
+      },
+      {
+        "title": "Cross-Cluster API Calls",
+        "targets": [
+          {
+            "expr": "sum(rate(cross_cluster_calls_total[5m])) by (status)"
+          }
+        ]
+      },
+      {
+        "title": "Processing Latency",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(log_processing_latency_seconds_bucket[5m]))"
+          }
+        ]
+      }
+    ]
+  }
+}
