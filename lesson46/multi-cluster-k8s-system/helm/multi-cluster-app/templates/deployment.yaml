@@ -1,0 +1,36 @@
+{{- range .Values.karmada.clusters }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-collector-{{ .name }}
+  labels:
+    app: log-collector
+    cluster: {{ .name }}
+    region: {{ .region }}
+spec:
+  replicas: {{ $.Values.logCollector.replicaCount }}
+  selector:
+    matchLabels:
+      app: log-collector
+      cluster: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: log-collector
+        cluster: {{ .name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+      containers:
+      - name: log-collector
+        image: "{{ $.Values.global.imageRegistry }}/{{ $.Values.logCollector.image.repository }}:{{ $.Values.logCollector.image.tag }}"
+        env:
+        - name: CLUSTER_NAME
+          value: {{ .name }}
+        - name: CLUSTER_REGION
+          value: {{ .region }}
+        resources:
+          {{- toYaml $.Values.logCollector.resources | nindent 10 }}
+{{- end }}

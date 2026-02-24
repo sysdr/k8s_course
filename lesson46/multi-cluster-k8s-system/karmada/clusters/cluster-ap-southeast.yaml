@@ -1,0 +1,28 @@
+apiVersion: cluster.karmada.io/v1alpha1
+kind: Cluster
+metadata:
+  name: cluster-ap-southeast
+spec:
+  apiEndpoint: https://ap-southeast-k8s.example.com:6443
+  secretRef:
+    namespace: karmada-cluster
+    name: cluster-ap-southeast-secret
+  syncMode: Push
+  taints:
+    - key: region
+      value: ap-southeast-1
+      effect: NoSchedule
+  tolerations:
+    - key: region
+      operator: Equal
+      value: ap-southeast-1
+      effect: NoSchedule
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cluster-ap-southeast-secret
+  namespace: karmada-cluster
+type: Opaque
+data:
+  kubeconfig: <base64-encoded-kubeconfig>

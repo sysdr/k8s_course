@@ -1,0 +1,28 @@
+apiVersion: cluster.karmada.io/v1alpha1
+kind: Cluster
+metadata:
+  name: cluster-us-west
+spec:
+  apiEndpoint: https://us-west-k8s.example.com:6443
+  secretRef:
+    namespace: karmada-cluster
+    name: cluster-us-west-secret
+  syncMode: Push
+  taints:
+    - key: region
+      value: us-west-2
+      effect: NoSchedule
+  tolerations:
+    - key: region
+      operator: Equal
+      value: us-west-2
+      effect: NoSchedule
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cluster-us-west-secret
+  namespace: karmada-cluster
+type: Opaque
+data:
+  kubeconfig: <base64-encoded-kubeconfig>
