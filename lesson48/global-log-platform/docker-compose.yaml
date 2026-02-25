@@ -1,0 +1,89 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports: ["2181:2181"]
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.0
+    depends_on: [zookeeper]
+    ports: ["9092:9092"]
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       logsdb
+      POSTGRES_USER:     logs
+      POSTGRES_PASSWORD: logs
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logs -d logsdb"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  log-ingestion:
+    build: services/log-ingestion
+    ports: ["8000:8000"]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      REGION: local
+    depends_on: [kafka]
+
+  log-processor:
+    build: services/log-processor
+    ports: ["9090:9090"]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DATABASE_URL: postgresql://logs:logs@postgres:5432/logsdb
+      REGION: local
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_started }
+
+  aggregator:
+    build: services/aggregator
+    ports: ["8001:8001"]
+    environment:
+      US_EAST_ENDPOINT: http://log-ingestion:8000
+      EU_WEST_ENDPOINT: http://log-ingestion:8000
+    depends_on: [log-ingestion]
+
+  frontend:
+    build: frontend
+    ports: ["3000:80"]
+    environment:
+      REACT_APP_AGGREGATOR_WS: ws://localhost:8001/ws/logs
+    depends_on: [aggregator]
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    volumes:
+      - ./monitoring/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alert-rules.yaml:/etc/prometheus/rules/alerts.yaml:ro
+    ports: ["9095:9090"]
+
+  grafana:
+    image: grafana/grafana:10.3.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports: ["3001:3000"]
+    depends_on: [prometheus]
+
+volumes:
+  pgdata:

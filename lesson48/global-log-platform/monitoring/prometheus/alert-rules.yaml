@@ -1,0 +1,49 @@
+groups:
+  - name: global-load-balancer
+    rules:
+      - alert: HighIngestionErrorRate
+        expr: |
+          rate(kafka_publish_errors_total[5m]) /
+          rate(log_ingestion_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Kafka publish error rate in {{ $labels.region }}"
+          description: "{{ $value | humanizePercentage }} of log ingestion events failing to publish"
+
+      - alert: RegionalLatencyP99High
+        expr: |
+          histogram_quantile(0.99, rate(log_ingestion_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "P99 ingestion latency > 500ms in {{ $labels.region }}"
+
+      - alert: HPAMaxReplicasReached
+        expr: |
+          kube_horizontalpodautoscaler_status_current_replicas ==
+          kube_horizontalpodautoscaler_spec_max_replicas
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HPA {{ $labels.horizontalpodautoscaler }} at max replicas — capacity ceiling reached"
+
+      - alert: IstioEndpointEjected
+        expr: |
+          envoy_cluster_outlier_detection_ejections_active > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Istio outlier detection has ejected endpoints in {{ $labels.cluster_name }}"
+
+      - alert: KafkaConsumerLag
+        expr: kafka_consumer_lag_sum > 10000
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka consumer lag > 10k in {{ $labels.region }}"

@@ -1,0 +1,37 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: log-ingestion-vs
+  namespace: log-processing
+spec:
+  hosts:
+    - log-ingestion
+    - logs.example.com
+  gateways:
+    - log-platform-gateway
+    - mesh
+  http:
+    - match:
+        - uri:
+            prefix: /ingest
+      timeout: 10s
+      retries:
+        attempts: 3
+        perTryTimeout: 3s
+        retryOn: 5xx,reset,connect-failure,retriable-4xx
+      route:
+        - destination:
+            host: log-ingestion
+            port:
+              number: 8000
+            subset: v1
+          weight: 100
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: log-ingestion
+            port:
+              number: 8000
+            subset: v1
