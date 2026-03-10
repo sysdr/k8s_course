@@ -1,0 +1,93 @@
+# Default values for log-platform
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  region: "us-east-1"
+  environment: "production"
+
+logIngestion:
+  replicaCount: 3
+  image:
+    repository: log-ingestion
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+
+logProcessor:
+  replicaCount: 2
+  image:
+    repository: log-processor
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+logQuery:
+  replicaCount: 2
+  image:
+    repository: log-query
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: frontend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+ingress:
+  enabled: true
+  className: nginx
+  host: logs.example.com
+  tls: true
+
+kafka:
+  enabled: true
+  replicaCount: 3
+  persistence:
+    size: 20Gi
+
+redis:
+  enabled: true
+  architecture: standalone
+  persistence:
+    size: 5Gi
+
+postgresql:
+  enabled: true
+  auth:
+    username: loguser
+    password: logpass
+    database: logdb
+  primary:
+    persistence:
+      size: 20Gi
+
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true

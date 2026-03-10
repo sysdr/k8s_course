@@ -1,0 +1,28 @@
+{{- range $name, $svc := .Values | pick "logIngestion" "logProcessor" "logQuery" "frontend" }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name | kebabcase }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $name | kebabcase }}
+    release: {{ $.Release.Name }}
+    chart: {{ $.Chart.Name }}-{{ $.Chart.Version }}
+spec:
+  replicas: {{ $svc.replicaCount | default 2 }}
+  selector:
+    matchLabels:
+      app: {{ $name | kebabcase }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name | kebabcase }}
+    spec:
+      containers:
+        - name: {{ $name | kebabcase }}
+          image: "{{ $svc.image.repository }}:{{ $svc.image.tag }}"
+          imagePullPolicy: {{ $svc.image.pullPolicy }}
+          resources:
+            {{- toYaml $svc.resources | nindent 12 }}
+{{- end }}

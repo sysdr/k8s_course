@@ -1,0 +1,21 @@
+{{- if .Values.logIngestion.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: log-ingestion-hpa
+  namespace: {{ .Release.Namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: log-ingestion
+  minReplicas: {{ .Values.logIngestion.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.logIngestion.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.logIngestion.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}

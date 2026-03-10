@@ -1,0 +1,52 @@
+{
+  "title": "Log Platform Overview",
+  "uid": "log-platform-overview",
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Total Events Ingested (5m)",
+      "targets": [{
+        "expr": "sum(rate(log_ingestion_total[5m])) * 60",
+        "legendFormat": "events/min"
+      }],
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}
+    },
+    {
+      "type": "timeseries",
+      "title": "Ingestion Rate by Level",
+      "targets": [{
+        "expr": "sum by (level) (rate(log_ingestion_total[1m]))",
+        "legendFormat": "{{level}}"
+      }],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+    },
+    {
+      "type": "timeseries",
+      "title": "P99 Ingestion Latency (ms)",
+      "targets": [{
+        "expr": "histogram_quantile(0.99, rate(log_ingestion_duration_seconds_bucket[5m])) * 1000",
+        "legendFormat": "p99"
+      }],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+    },
+    {
+      "type": "stat",
+      "title": "Kafka Publish Errors (5m)",
+      "targets": [{
+        "expr": "sum(rate(log_kafka_publish_errors_total[5m]))",
+        "legendFormat": "errors/s"
+      }],
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0}
+    },
+    {
+      "type": "timeseries",
+      "title": "HPA Replica Count",
+      "targets": [{
+        "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"log-platform\"}",
+        "legendFormat": "{{horizontalpodautoscaler}}"
+      }],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+    }
+  ]
+}

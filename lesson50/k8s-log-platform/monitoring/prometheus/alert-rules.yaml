@@ -1,0 +1,52 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: log-platform-alerts
+  namespace: monitoring
+  labels:
+    monitoring: log-platform
+spec:
+  groups:
+    - name: log-platform.availability
+      rules:
+        - alert: LogIngestionDown
+          expr: up{job="log-ingestion"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Log ingestion service is down"
+            description: "{{ $labels.instance }} has been down for > 1 minute"
+
+        - alert: HighKafkaPublishErrorRate
+          expr: rate(log_kafka_publish_errors_total[5m]) > 0.05
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High Kafka publish error rate"
+            description: "Error rate is {{ $value | humanizePercentage }}"
+
+        - alert: LogIngestionLatencyHigh
+          expr: histogram_quantile(0.99, rate(log_ingestion_duration_seconds_bucket[5m])) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "P99 ingestion latency exceeds 500ms"
+
+        - alert: PodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total{namespace="log-platform"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod is crash looping in log-platform namespace"
+
+        - alert: HPAMaxReplicasReached
+          expr: kube_horizontalpodautoscaler_status_current_replicas == kube_horizontalpodautoscaler_spec_max_replicas
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HPA has reached maximum replicas — capacity ceiling hit"
