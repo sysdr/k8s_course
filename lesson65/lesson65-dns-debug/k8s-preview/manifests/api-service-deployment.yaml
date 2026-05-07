@@ -1,0 +1,49 @@
+# Kubernetes equivalent of docker-compose depends_on: condition: service_healthy
+# is the readinessProbe. A pod is not added to Service endpoints until its
+# readinessProbe passes — eliminating the BUG #3 race condition at orchestrator level.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-service
+  namespace: log-processing
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-service
+  template:
+    metadata:
+      labels:
+        app: api-service
+    spec:
+      containers:
+        - name: api-service
+          image: lesson65-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: LOG_PROCESSOR_URL
+              # Kubernetes DNS — no network attachment needed.
+              # CoreDNS resolves this cluster-wide within the namespace.
+              value: "http://log-processor:8080"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"

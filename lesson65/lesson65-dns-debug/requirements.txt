@@ -1,0 +1,6 @@
+# Lesson 65 — dependencies for integration tests against running Docker Compose
+# Usage (from repo root): python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+# Tests live under: lesson65-dns-debug/tests/
+
+pytest==7.4.4
+httpx==0.26.0

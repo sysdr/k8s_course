@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.env
+.env.*
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Lesson generated / logs (setup.sh writes alongside itself, one level above this folder)
+../generate_k8s_system.log
+generate_k8s_system.log
+
+# Istio / local mesh artifacts (if added later)
+**/istio-*-*/
+**/*istio*.tgz

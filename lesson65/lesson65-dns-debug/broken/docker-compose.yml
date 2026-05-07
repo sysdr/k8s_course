@@ -1,0 +1,71 @@
+# =============================================================================
+# BROKEN docker-compose.yml — Lesson 65 Break-It-Friday
+#
+# This file contains THREE deliberate bugs:
+#
+# BUG #1: api-service is only attached to frontend-net.
+#         log-processor runs on backend-net.
+#         api-service cannot resolve log-processor's DNS name.
+#
+# BUG #2: The alias "processor" is defined at the wrong YAML level.
+#         Aliases must be under networks.<network-name>, not at service root.
+#         As written, the alias silently fails to register.
+#
+# BUG #3: depends_on uses the deprecated list form with no condition.
+#         api-service may start before log-processor is ready to accept
+#         connections, causing transient 503s even after BUG #1 and #2 are fixed.
+#
+# Your task: find and fix all three bugs. Use the diagnostic scripts in
+# ../scripts/ to validate each fix.
+# =============================================================================
+
+version: "3.9"
+
+networks:
+  frontend-net:
+    driver: bridge
+    name: lesson65-frontend
+  backend-net:
+    driver: bridge
+    name: lesson65-backend
+
+services:
+  api-service:
+    build:
+      context: ./api-service
+      dockerfile: Dockerfile
+    container_name: lesson65-api
+    ports:
+      - "8000:8000"
+    environment:
+      - LOG_PROCESSOR_URL=http://processor:8080
+    # BUG #1: api-service only attached to frontend-net
+    # It cannot reach anything on backend-net, including log-processor
+    networks:
+      - frontend-net
+    # BUG #3: no condition — depends_on does not wait for log-processor to be healthy
+    depends_on:
+      - log-processor
+    restart: unless-stopped
+
+  log-processor:
+    build:
+      context: ./log-processor
+      dockerfile: Dockerfile
+    container_name: lesson65-processor
+    ports:
+      - "8080:8080"
+    # BUG #2: aliases defined at wrong level — this key is invalid here
+    # and is silently ignored by Docker Compose
+    aliases:
+      - processor
+      - log-svc
+    networks:
+      - backend-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped

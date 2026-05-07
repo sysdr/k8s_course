@@ -1,0 +1,24 @@
+# In Kubernetes, this Service object creates the DNS record in CoreDNS.
+# Any pod in the 'log-processing' namespace can resolve:
+#   log-processor -> ClusterIP
+#   log-processor.log-processing -> ClusterIP
+#   log-processor.log-processing.svc.cluster.local -> ClusterIP
+#
+# This is the Kubernetes equivalent of Docker Compose network aliases —
+# but cluster-scoped and managed declaratively.
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-processor
+  namespace: log-processing
+  labels:
+    app: log-processor
+spec:
+  selector:
+    app: log-processor
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
