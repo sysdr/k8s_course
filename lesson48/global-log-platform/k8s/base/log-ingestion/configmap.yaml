@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: log-ingestion-config
-  namespace: log-processing
-data:
-  KAFKA_TOPIC:  "raw-logs"
-  LOG_LEVEL:    "INFO"
-  WORKERS:      "4"

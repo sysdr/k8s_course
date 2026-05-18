@@ -1,6 +1,0 @@
-apiVersion: v2
-name: log-analytics
-description: Log Analytics Helm Chart
-type: application
-version: 0.1.0
-appVersion: "1.0"

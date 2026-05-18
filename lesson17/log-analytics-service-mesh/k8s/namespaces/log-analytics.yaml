@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: log-analytics
-  labels:
-    istio-injection: enabled
-    app: log-analytics

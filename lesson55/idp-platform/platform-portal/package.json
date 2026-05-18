@@ -1,7 +1,0 @@
-{
-  "name": "platform-portal",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": { "start": "npx serve -s build -l 3000", "dev": "npx serve public -l 3000" },
-  "dependencies": {}
-}

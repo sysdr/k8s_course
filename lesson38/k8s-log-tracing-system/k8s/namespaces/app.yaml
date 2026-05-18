@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: app
-  labels:
-    istio-injection: enabled          # auto-inject Envoy sidecar
-    app.kubernetes.io/managed-by: helm

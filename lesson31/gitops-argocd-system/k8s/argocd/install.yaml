@@ -1,9 +1,0 @@
-# This will pull the official ArgoCD installation manifest
-# In production, you should version and store this in your GitOps repo
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: argocd
----
-# ArgoCD will be installed using the official manifest
-# kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
